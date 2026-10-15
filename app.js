@@ -12,12 +12,75 @@
   const STORAGE_KEY_ITEMS = 'prompt_studio_contents_v1';
   const STORAGE_KEY_CONFIG = 'prompt_studio_config_v1';
 
+  const DEFAULT_QUICK_TOOLS = [
+    {
+      id: 'tool-flow',
+      name: 'FLOW',
+      url: 'https://flow.google.com/',
+      icon: 'fa-video',
+      color: '#6366f1'
+    },
+    {
+      id: 'tool-tts',
+      name: '타입캐스트 (TTS)',
+      url: 'https://studio.typecast.ai/text-to-speech?utm_source=google&utm_medium=cpc&utm_campaign=kr_23_search_generic&utm_content=pc_generic_rsa_001&utm_term=tts&gad_source=1&gad_campaignid=18848876335&gbraid=0AAAAACvnHj_MKchr_6zqYfLL3SIEvRMNx&gclid=Cj0KCQiA7-rMBhCFARIsAKnLKtD03R3ZRgIoRMOK8dkOWlfYTghURpwpe8MK_Ouox0MklIlIKUs4XgIaAjmzEALw_wcB',
+      icon: 'fa-microphone-lines',
+      color: '#0ea5e9'
+    },
+    {
+      id: 'tool-motion',
+      name: '모션엘리먼츠',
+      url: 'https://www.motionelements.com/ko/',
+      icon: 'fa-shapes',
+      color: '#f59e0b'
+    },
+    {
+      id: 'tool-adobe',
+      name: '어도비 익스프레스',
+      url: 'https://express.adobe.com/',
+      icon: 'fa-palette',
+      color: '#ef4444'
+    },
+    {
+      id: 'tool-suno',
+      name: 'SUNO AI',
+      url: 'https://suno.com/create?signup_source=splashpage&referrer=%2Fhome&redirected_from=signin',
+      icon: 'fa-music',
+      color: '#10b981'
+    }
+  ];
+
+  const SAMPLE_TOOL_ICONS = [
+    { icon: 'fa-video', label: '비디오' },
+    { icon: 'fa-microphone-lines', label: 'TTS' },
+    { icon: 'fa-shapes', label: '모션' },
+    { icon: 'fa-palette', label: '디자인' },
+    { icon: 'fa-music', label: '음악' },
+    { icon: 'fa-robot', label: 'AI로봇' },
+    { icon: 'fa-wand-magic-sparkles', label: '생성' },
+    { icon: 'fa-image', label: '이미지' },
+    { icon: 'fa-film', label: '쇼츠' },
+    { icon: 'fa-bolt', label: '번개' },
+    { icon: 'fa-globe', label: '웹' },
+    { icon: 'fa-pen-nib', label: '작문' },
+    { icon: 'fa-camera', label: '카메라' },
+    { icon: 'fa-lightbulb', label: '아이디어' },
+    { icon: 'fa-folder', label: '자료실' },
+    { icon: 'fa-link', label: '링크' }
+  ];
+
+  const SAMPLE_TOOL_COLORS = [
+    '#6366f1', '#0ea5e9', '#f59e0b', '#ef4444',
+    '#10b981', '#8b5cf6', '#ec4899', '#3b82f6'
+  ];
+
   const DEFAULT_CONFIG = {
     statuses: ['대기중', '진행중', '완료'],
     channels: ['비츠온TV', '아라쇼', '일신비츠온'],
     formats: ['롱폼', '쇼츠'],
     categories: ['비츠온 콘텐츠', '광고'],
-    customColumns: []
+    customColumns: [],
+    quickTools: [...DEFAULT_QUICK_TOOLS]
   };
 
   // 사용자가 메모장으로 저장해둔 필수 참고 프롬프트 6종
@@ -504,7 +567,8 @@ Flow 동영상 생성 프롬프트:`
           channels: parsed.channels && parsed.channels.length ? parsed.channels : [...DEFAULT_CONFIG.channels],
           formats: parsed.formats && parsed.formats.length ? parsed.formats : [...DEFAULT_CONFIG.formats],
           categories: parsed.categories && parsed.categories.length ? parsed.categories : [...DEFAULT_CONFIG.categories],
-          customColumns: Array.isArray(parsed.customColumns) ? parsed.customColumns : []
+          customColumns: Array.isArray(parsed.customColumns) ? parsed.customColumns : [],
+          quickTools: Array.isArray(parsed.quickTools) && parsed.quickTools.length ? parsed.quickTools : JSON.parse(JSON.stringify(DEFAULT_QUICK_TOOLS))
         };
       } else {
         appState.config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
@@ -555,6 +619,7 @@ Flow 동영상 생성 프롬프트:`
           formats: appState.config.formats,
           categories: appState.config.categories,
           customColumns: appState.config.customColumns,
+          quickTools: appState.config.quickTools,
           updatedAt: new Date().toISOString()
         });
       } catch (err) {
@@ -717,7 +782,8 @@ Flow 동영상 생성 프롬프트:`
               channels: cloudConfig.channels,
               formats: cloudConfig.formats,
               categories: cloudConfig.categories,
-              customColumns: Array.isArray(cloudConfig.customColumns) ? cloudConfig.customColumns : []
+              customColumns: Array.isArray(cloudConfig.customColumns) ? cloudConfig.customColumns : [],
+              quickTools: Array.isArray(cloudConfig.quickTools) && cloudConfig.quickTools.length ? cloudConfig.quickTools : JSON.parse(JSON.stringify(DEFAULT_QUICK_TOOLS))
             };
             try {
               localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(appState.config));
@@ -725,6 +791,7 @@ Flow 동영상 생성 프롬프트:`
             populateSelectOptions();
             renderTableHeader();
             renderFormCustomColumns();
+            renderSidebarQuickTools();
             if (appState.currentTab === 'tab-settings') {
               renderSettings();
             } else if (appState.currentTab === 'tab-list') {
@@ -764,6 +831,7 @@ Flow 동영상 생성 프롬프트:`
         formats: appState.config.formats,
         categories: appState.config.categories,
         customColumns: appState.config.customColumns,
+        quickTools: appState.config.quickTools,
         updatedAt: new Date().toISOString()
       });
 
@@ -1971,6 +2039,7 @@ Flow 동영상 생성 프롬프트:`
     });
 
     renderCustomColumnsSettings();
+    renderQuickToolsSettings();
   }
 
   function renderCustomColumnsSettings() {
@@ -2204,6 +2273,281 @@ Flow 동영상 생성 프롬프트:`
   }
 
   // ==========================================
+  // 제작 도구 바로가기 (Quick Tools) 관리 및 렌더링
+  // ==========================================
+  let selectedQuickToolIcon = 'fa-video';
+  let selectedQuickToolColor = '#6366f1';
+  let isQuickToolsFormInitialized = false;
+
+  function renderSidebarQuickTools() {
+    const listEl = document.getElementById('sidebar-quick-tools-list');
+    if (!listEl) return;
+
+    const tools = appState.config.quickTools || [];
+    if (tools.length === 0) {
+      listEl.innerHTML = `
+        <div class="sidebar-tools-empty">
+          <span>등록된 바로가기가 없습니다.</span>
+        </div>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = tools.map(tool => {
+      const icon = tool.icon || 'fa-link';
+      const color = tool.color || '#3b82f6';
+      let url = (tool.url || '').trim();
+      if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+      }
+
+      return `
+        <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="tool-link-item" title="${escapeHtml(tool.name)} (새 탭으로 열기)">
+          <span class="tool-icon" style="background: ${color};">
+            <i class="fa-solid ${icon}"></i>
+          </span>
+          <span class="tool-name">${escapeHtml(tool.name)}</span>
+          <i class="fa-solid fa-arrow-up-right-from-square tool-arrow"></i>
+        </a>
+      `;
+    }).join('');
+  }
+
+  function initQuickToolsForm() {
+    if (isQuickToolsFormInitialized) return;
+    const iconGrid = document.getElementById('tool-icon-picker-grid');
+    const colorGrid = document.getElementById('tool-color-picker-grid');
+    const nameInput = document.getElementById('new-tool-name');
+    const urlInput = document.getElementById('new-tool-url');
+    const addBtn = document.getElementById('btn-add-quick-tool');
+    const resetBtn = document.getElementById('btn-reset-default-tools');
+    const sidebarAddBtn = document.getElementById('btn-sidebar-add-tool');
+
+    if (iconGrid) {
+      iconGrid.innerHTML = SAMPLE_TOOL_ICONS.map(item => `
+        <button type="button" class="icon-picker-btn ${item.icon === selectedQuickToolIcon ? 'active' : ''}" data-icon="${item.icon}" title="${item.label}">
+          <i class="fa-solid ${item.icon}"></i>
+        </button>
+      `).join('');
+
+      iconGrid.querySelectorAll('.icon-picker-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          iconGrid.querySelectorAll('.icon-picker-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedQuickToolIcon = btn.dataset.icon;
+          updateQuickToolPreview();
+        });
+      });
+    }
+
+    if (colorGrid) {
+      colorGrid.innerHTML = SAMPLE_TOOL_COLORS.map(c => `
+        <button type="button" class="color-picker-btn ${c === selectedQuickToolColor ? 'active' : ''}" data-color="${c}" style="background: ${c};" title="${c}">
+        </button>
+      `).join('');
+
+      colorGrid.querySelectorAll('.color-picker-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          colorGrid.querySelectorAll('.color-picker-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedQuickToolColor = btn.dataset.color;
+          updateQuickToolPreview();
+        });
+      });
+    }
+
+    if (nameInput) {
+      nameInput.addEventListener('input', updateQuickToolPreview);
+      nameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          if (urlInput) urlInput.focus();
+        }
+      });
+    }
+    if (urlInput) {
+      urlInput.addEventListener('input', updateQuickToolPreview);
+      urlInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          const name = (nameInput ? nameInput.value : '').trim();
+          const url = (urlInput ? urlInput.value : '').trim();
+          addQuickTool(name, url, selectedQuickToolIcon, selectedQuickToolColor);
+        }
+      });
+    }
+
+    if (addBtn) {
+      addBtn.addEventListener('click', () => {
+        const name = (nameInput ? nameInput.value : '').trim();
+        const url = (urlInput ? urlInput.value : '').trim();
+        addQuickTool(name, url, selectedQuickToolIcon, selectedQuickToolColor);
+      });
+    }
+
+    if (resetBtn) {
+      resetBtn.addEventListener('click', resetDefaultQuickTools);
+    }
+
+    if (sidebarAddBtn) {
+      sidebarAddBtn.addEventListener('click', () => {
+        switchTab('tab-settings');
+        const section = document.getElementById('quick-tools-settings-section');
+        if (section) {
+          section.scrollIntoView({ behavior: 'smooth' });
+          if (nameInput) {
+            setTimeout(() => nameInput.focus(), 250);
+          }
+        }
+      });
+    }
+
+    isQuickToolsFormInitialized = true;
+    updateQuickToolPreview();
+  }
+
+  function updateQuickToolPreview() {
+    const nameInput = document.getElementById('new-tool-name');
+    const previewName = document.getElementById('tool-preview-name');
+    const previewIcon = document.getElementById('tool-preview-icon');
+
+    const val = nameInput && nameInput.value.trim() ? nameInput.value.trim() : '새 바로가기';
+    if (previewName) previewName.textContent = val;
+
+    if (previewIcon) {
+      previewIcon.style.background = selectedQuickToolColor;
+      previewIcon.innerHTML = `<i class="fa-solid ${selectedQuickToolIcon}"></i>`;
+    }
+  }
+
+  function renderQuickToolsSettings() {
+    initQuickToolsForm();
+
+    const tools = appState.config.quickTools || [];
+    const countBadge = document.getElementById('badge-quick-tools-count');
+    const regCount = document.getElementById('quick-tools-registered-count');
+    const listEl = document.getElementById('quick-tools-manage-list');
+
+    if (countBadge) countBadge.textContent = `${tools.length}개`;
+    if (regCount) regCount.textContent = `${tools.length}개`;
+
+    if (!listEl) return;
+
+    if (tools.length === 0) {
+      listEl.innerHTML = `
+        <div style="padding: 24px; text-align: center; color: var(--text-light); background: #f8fafc; border-radius: var(--radius-sm); border: 1px dashed var(--border-color);">
+          <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 24px; margin-bottom: 8px; display: block; opacity: 0.5;"></i>
+          <span>등록된 제작 도구 바로가기가 없습니다. 상단 양식에서 새로 추가하거나 기본 5종 복원을 눌러보세요.</span>
+        </div>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = tools.map(tool => {
+      let url = (tool.url || '').trim();
+      if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+      }
+
+      return `
+        <div class="manage-tool-row" data-tool-id="${tool.id}">
+          <div class="manage-tool-left">
+            <span class="manage-tool-icon" style="background: ${tool.color || '#3b82f6'};">
+              <i class="fa-solid ${tool.icon || 'fa-link'}"></i>
+            </span>
+            <div class="manage-tool-info">
+              <span class="manage-tool-title">${escapeHtml(tool.name)}</span>
+              <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="manage-tool-url" title="${escapeHtml(url)}">
+                ${escapeHtml(url)}
+              </a>
+            </div>
+          </div>
+          <div class="manage-tool-actions">
+            <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="btn-test-tool" title="새 탭으로 열기 테스트">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> 열기
+            </a>
+            <button type="button" class="btn-del-tool" data-tool-id="${tool.id}" title="바로가기 삭제">
+              <i class="fa-regular fa-trash-can"></i> 삭제
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    listEl.querySelectorAll('.btn-del-tool').forEach(btn => {
+      btn.addEventListener('click', () => {
+        deleteQuickTool(btn.dataset.toolId);
+      });
+    });
+  }
+
+  function addQuickTool(name, url, icon, color) {
+    if (!name) {
+      showToast('페이지 / 도구 제목을 입력해주세요.');
+      const el = document.getElementById('new-tool-name');
+      if (el) el.focus();
+      return;
+    }
+    if (!url) {
+      showToast('웹사이트 URL 주소를 입력해주세요.');
+      const el = document.getElementById('new-tool-url');
+      if (el) el.focus();
+      return;
+    }
+
+    let finalUrl = url.trim();
+    if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+      finalUrl = 'https://' + finalUrl;
+    }
+
+    if (!appState.config.quickTools) {
+      appState.config.quickTools = [];
+    }
+
+    const newTool = {
+      id: 'tool_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      name: name,
+      url: finalUrl,
+      icon: icon || 'fa-video',
+      color: color || '#6366f1'
+    };
+
+    appState.config.quickTools.push(newTool);
+    saveConfigToStorage();
+    renderSidebarQuickTools();
+    renderQuickToolsSettings();
+
+    const nameInput = document.getElementById('new-tool-name');
+    const urlInput = document.getElementById('new-tool-url');
+    if (nameInput) nameInput.value = '';
+    if (urlInput) urlInput.value = '';
+    updateQuickToolPreview();
+
+    showToast(`새 바로가기 '${name}'이(가) 추가되었습니다!`);
+  }
+
+  function deleteQuickTool(toolId) {
+    const tool = (appState.config.quickTools || []).find(t => t.id === toolId);
+    const name = tool ? tool.name : '바로가기';
+    if (!confirm(`'${name}' 바로가기를 삭제하시겠습니까?`)) return;
+
+    appState.config.quickTools = (appState.config.quickTools || []).filter(t => t.id !== toolId);
+    saveConfigToStorage();
+    renderSidebarQuickTools();
+    renderQuickToolsSettings();
+    showToast(`'${name}' 바로가기가 삭제되었습니다.`);
+  }
+
+  function resetDefaultQuickTools() {
+    if (!confirm('기본 5종 제작 도구 바로가기(FLOW, 타입캐스트, 모션엘리먼츠, 어도비, SUNO AI)로 복원하시겠습니까?')) {
+      return;
+    }
+    appState.config.quickTools = JSON.parse(JSON.stringify(DEFAULT_QUICK_TOOLS));
+    saveConfigToStorage();
+    renderSidebarQuickTools();
+    renderQuickToolsSettings();
+    showToast('기본 바로가기 5종으로 복원되었습니다.');
+  }
+
+  // ==========================================
   // 14. 데이터 백업 및 복원 (JSON)
   // ==========================================
   function exportDataAsJson() {
@@ -2244,7 +2588,8 @@ Flow 동영상 생성 프롬프트:`
               channels: parsed.config.channels || DEFAULT_CONFIG.channels,
               formats: parsed.config.formats || DEFAULT_CONFIG.formats,
               categories: parsed.config.categories || DEFAULT_CONFIG.categories,
-              customColumns: parsed.config.customColumns || DEFAULT_CONFIG.customColumns
+              customColumns: parsed.config.customColumns || DEFAULT_CONFIG.customColumns,
+              quickTools: parsed.config.quickTools || DEFAULT_CONFIG.quickTools
             };
           }
         } else {
@@ -2256,6 +2601,7 @@ Flow 동영상 생성 프롬프트:`
         populateSelectOptions();
         renderTableHeader();
         renderFormCustomColumns();
+        renderSidebarQuickTools();
         renderContentList();
         renderSettings();
         showToast('데이터가 성공적으로 복원되었습니다!');
@@ -2714,6 +3060,8 @@ service cloud.firestore {
     populateSelectOptions();
     renderFormCustomColumns();
     renderRefPromptTabs();
+    renderSidebarQuickTools();
+    initQuickToolsForm();
     setupEventListeners();
     updateStorageInfo();
     renderContentList();

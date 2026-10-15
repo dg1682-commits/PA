@@ -53,38 +53,14 @@
       <div class="sidebar-quick-tools">
         <div class="sidebar-section-title">
           <span>제작 도구 바로가기</span>
-          <i class="fa-solid fa-arrow-up-right-from-square title-ext-icon"></i>
+          <div class="sidebar-tools-header-actions">
+            <button type="button" class="btn-sidebar-add-tool" id="btn-sidebar-add-tool" title="새 제작 도구 추가 (설정으로 이동)">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
         </div>
-        <div class="quick-tools-list">
-          <a href="https://flow.google.com/" target="_blank" rel="noopener noreferrer" class="tool-link-item" title="Google Flow (새 탭으로 열기)">
-            <span class="tool-icon tool-flow"><i class="fa-solid fa-video"></i></span>
-            <span class="tool-name">FLOW</span>
-            <i class="fa-solid fa-arrow-up-right-from-square tool-arrow"></i>
-          </a>
-
-          <a href="https://studio.typecast.ai/text-to-speech?utm_source=google&utm_medium=cpc&utm_campaign=kr_23_search_generic&utm_content=pc_generic_rsa_001&utm_term=tts&gad_source=1&gad_campaignid=18848876335&gbraid=0AAAAACvnHj_MKchr_6zqYfLL3SIEvRMNx&gclid=Cj0KCQiA7-rMBhCFARIsAKnLKtD03R3ZRgIoRMOK8dkOWlfYTghURpwpe8MK_Ouox0MklIlIKUs4XgIaAjmzEALw_wcB" target="_blank" rel="noopener noreferrer" class="tool-link-item" title="타입캐스트 TTS (새 탭으로 열기)">
-            <span class="tool-icon tool-tts"><i class="fa-solid fa-microphone-lines"></i></span>
-            <span class="tool-name">타입캐스트 (TTS)</span>
-            <i class="fa-solid fa-arrow-up-right-from-square tool-arrow"></i>
-          </a>
-
-          <a href="https://www.motionelements.com/ko/" target="_blank" rel="noopener noreferrer" class="tool-link-item" title="모션엘리먼츠 (새 탭으로 열기)">
-            <span class="tool-icon tool-motion"><i class="fa-solid fa-shapes"></i></span>
-            <span class="tool-name">모션엘리먼츠</span>
-            <i class="fa-solid fa-arrow-up-right-from-square tool-arrow"></i>
-          </a>
-
-          <a href="https://express.adobe.com/" target="_blank" rel="noopener noreferrer" class="tool-link-item" title="어도비 익스프레스 (새 탭으로 열기)">
-            <span class="tool-icon tool-adobe"><i class="fa-solid fa-palette"></i></span>
-            <span class="tool-name">어도비 익스프레스</span>
-            <i class="fa-solid fa-arrow-up-right-from-square tool-arrow"></i>
-          </a>
-
-          <a href="https://suno.com/create?signup_source=splashpage&referrer=%2Fhome&redirected_from=signin" target="_blank" rel="noopener noreferrer" class="tool-link-item" title="SUNO AI (새 탭으로 열기)">
-            <span class="tool-icon tool-suno"><i class="fa-solid fa-music"></i></span>
-            <span class="tool-name">SUNO AI</span>
-            <i class="fa-solid fa-arrow-up-right-from-square tool-arrow"></i>
-          </a>
+        <div class="quick-tools-list" id="sidebar-quick-tools-list">
+          <!-- JS로 동적 렌더링 -->
         </div>
       </div>
 
@@ -557,6 +533,81 @@
             </div>
 
             <div class="custom-columns-list-wrap" id="custom-columns-grid"></div>
+          </div>
+
+          <!-- 6. 제작 도구 바로가기(Quick Tools) 설정 및 아이콘 관리 카드 -->
+          <div class="settings-card quick-tools-builder-card" id="quick-tools-settings-section">
+            <div class="settings-card-header">
+              <div class="setting-title-wrap">
+                <i class="fa-solid fa-arrow-up-right-from-square icon-tools"></i>
+                <h4>제작 도구 바로가기 설정 (사이드바 퀵 링크)</h4>
+              </div>
+              <span class="badge" id="badge-quick-tools-count">0개</span>
+            </div>
+            <p class="settings-card-desc">
+              왼쪽 사이드바에 표시되는 영상·음성·AI 제작 웹사이트 바로가기 링크를 추가하거나 관리합니다. 클릭 시 새 탭으로 즉시 열립니다.
+            </p>
+
+            <!-- 새 바로가기 추가 양식 -->
+            <div class="add-quick-tool-card">
+              <div class="quick-tool-form-header">
+                <i class="fa-solid fa-circle-plus"></i>
+                <span>새 제작 도구 바로가기 등록</span>
+              </div>
+
+              <div class="quick-tool-inputs-grid">
+                <div class="form-group flex-1">
+                  <label for="new-tool-name" class="required">페이지 / 도구 제목</label>
+                  <input type="text" id="new-tool-name" placeholder="예: ChatGPT, Midjourney, Kling AI, Runway">
+                </div>
+                <div class="form-group flex-2">
+                  <label for="new-tool-url" class="required">웹사이트 URL 주소</label>
+                  <input type="text" id="new-tool-url" placeholder="예: https://chatgpt.com 또는 https://...">
+                </div>
+              </div>
+
+              <!-- 아이콘 및 색상 선택 & 실시간 미리보기 -->
+              <div class="quick-tool-custom-row">
+                <div class="tool-picker-col flex-2">
+                  <label class="picker-label"><i class="fa-solid fa-icons"></i> 샘플 아이콘 선택</label>
+                  <div class="icon-picker-grid" id="tool-icon-picker-grid"></div>
+                </div>
+
+                <div class="tool-picker-col flex-1">
+                  <label class="picker-label"><i class="fa-solid fa-palette"></i> 테마 색상</label>
+                  <div class="color-picker-grid" id="tool-color-picker-grid"></div>
+                </div>
+
+                <div class="tool-preview-col">
+                  <label class="picker-label"><i class="fa-solid fa-eye"></i> 사이드바 미리보기</label>
+                  <div class="tool-preview-wrap">
+                    <div class="tool-link-item tool-preview-card" id="tool-preview-card">
+                      <span class="tool-icon" id="tool-preview-icon" style="background: #6366f1;">
+                        <i class="fa-solid fa-video"></i>
+                      </span>
+                      <span class="tool-name" id="tool-preview-name">새 바로가기</span>
+                      <i class="fa-solid fa-arrow-up-right-from-square tool-arrow"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="quick-tool-actions-bar">
+                <button type="button" class="btn btn-outline btn-sm" id="btn-reset-default-tools" title="FLOW, 타입캐스트 등 기본 5개 도구로 재설정">
+                  <i class="fa-solid fa-rotate-left"></i> 기본 5종 도구로 복원
+                </button>
+                <button type="button" class="btn btn-primary" id="btn-add-quick-tool">
+                  <i class="fa-solid fa-plus"></i> 바로가기 추가하기
+                </button>
+              </div>
+            </div>
+
+            <!-- 현재 등록된 바로가기 목록 -->
+            <div class="quick-tools-list-header">
+              <span class="list-heading"><i class="fa-solid fa-list-ul"></i> 현재 등록된 바로가기 목록 (<strong id="quick-tools-registered-count">0</strong>)</span>
+              <span class="list-hint">사이드바에서 클릭하여 새 탭으로 접속할 수 있습니다.</span>
+            </div>
+            <div class="quick-tools-manage-list" id="quick-tools-manage-list"></div>
           </div>
 
           <!-- Firebase 클라우드 연동 상태 및 관리 카드 -->
