@@ -74,13 +74,28 @@
     '#10b981', '#8b5cf6', '#ec4899', '#3b82f6'
   ];
 
+  const DEFAULT_ITEM_COLORS = {
+    '진행중': 'red',
+    '대기중': 'gray',
+    '완료': 'green',
+    '편집중': 'purple',
+    '비츠온TV': 'blue',
+    '아라쇼': 'purple',
+    '일신비츠온': 'cyan',
+    '롱폼': 'indigo',
+    '쇼츠': 'rose',
+    '비츠온 콘텐츠': 'green',
+    '광고': 'amber'
+  };
+
   const DEFAULT_CONFIG = {
     statuses: ['대기중', '진행중', '완료'],
     channels: ['비츠온TV', '아라쇼', '일신비츠온'],
     formats: ['롱폼', '쇼츠'],
     categories: ['비츠온 콘텐츠', '광고'],
     customColumns: [],
-    quickTools: [...DEFAULT_QUICK_TOOLS]
+    quickTools: [...DEFAULT_QUICK_TOOLS],
+    itemColors: { ...DEFAULT_ITEM_COLORS }
   };
 
   // 사용자가 메모장으로 저장해둔 필수 참고 프롬프트 6종
@@ -568,7 +583,8 @@ Flow 동영상 생성 프롬프트:`
           formats: parsed.formats && parsed.formats.length ? parsed.formats : [...DEFAULT_CONFIG.formats],
           categories: parsed.categories && parsed.categories.length ? parsed.categories : [...DEFAULT_CONFIG.categories],
           customColumns: Array.isArray(parsed.customColumns) ? parsed.customColumns : [],
-          quickTools: Array.isArray(parsed.quickTools) && parsed.quickTools.length ? parsed.quickTools : JSON.parse(JSON.stringify(DEFAULT_QUICK_TOOLS))
+          quickTools: Array.isArray(parsed.quickTools) && parsed.quickTools.length ? parsed.quickTools : JSON.parse(JSON.stringify(DEFAULT_QUICK_TOOLS)),
+          itemColors: { ...DEFAULT_ITEM_COLORS, ...(parsed.itemColors || {}) }
         };
       } else {
         appState.config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
@@ -620,6 +636,7 @@ Flow 동영상 생성 프롬프트:`
           categories: appState.config.categories,
           customColumns: appState.config.customColumns,
           quickTools: appState.config.quickTools,
+          itemColors: appState.config.itemColors,
           updatedAt: new Date().toISOString()
         });
       } catch (err) {
@@ -783,7 +800,8 @@ Flow 동영상 생성 프롬프트:`
               formats: cloudConfig.formats,
               categories: cloudConfig.categories,
               customColumns: Array.isArray(cloudConfig.customColumns) ? cloudConfig.customColumns : [],
-              quickTools: Array.isArray(cloudConfig.quickTools) && cloudConfig.quickTools.length ? cloudConfig.quickTools : JSON.parse(JSON.stringify(DEFAULT_QUICK_TOOLS))
+              quickTools: Array.isArray(cloudConfig.quickTools) && cloudConfig.quickTools.length ? cloudConfig.quickTools : JSON.parse(JSON.stringify(DEFAULT_QUICK_TOOLS)),
+              itemColors: { ...DEFAULT_ITEM_COLORS, ...(cloudConfig.itemColors || {}) }
             };
             try {
               localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(appState.config));
@@ -832,6 +850,7 @@ Flow 동영상 생성 프롬프트:`
         categories: appState.config.categories,
         customColumns: appState.config.customColumns,
         quickTools: appState.config.quickTools,
+        itemColors: appState.config.itemColors,
         updatedAt: new Date().toISOString()
       });
 
@@ -942,22 +961,27 @@ Flow 동영상 생성 프롬프트:`
   // ==========================================
   // 5. 진행상태 배지 헬퍼 & 테이블 헤더 & 옵션 동적 갱신
   // ==========================================
+  function getItemColor(name, fallback = 'blue') {
+    if (!name) return fallback;
+    const colors = (appState.config && appState.config.itemColors) || {};
+    if (colors[name]) return colors[name];
+    if (DEFAULT_ITEM_COLORS[name]) return DEFAULT_ITEM_COLORS[name];
+    return fallback;
+  }
+
   function getStatusBadgeHtml(status) {
     const s = status || '대기중';
-    let badgeClass = 'tag-status-custom';
-    let iconHtml = '<span class="status-pulse-dot"></span>';
+    const fallbackColor = s === '진행중' ? 'red' : (s === '완료' ? 'green' : (s === '대기중' ? 'gray' : 'purple'));
+    const color = getItemColor(s, fallbackColor);
+    let iconHtml = `<span class="status-pulse-dot dot-${color}"></span>`;
 
-    if (s === '진행중') {
-      badgeClass = 'tag-status-progress';
-    } else if (s === '완료') {
-      badgeClass = 'tag-status-done';
+    if (s === '완료') {
       iconHtml = '<i class="fa-solid fa-check" style="font-size:10px;margin-right:4px;"></i>';
     } else if (s === '대기중') {
-      badgeClass = 'tag-status-wait';
       iconHtml = '<i class="fa-regular fa-clock" style="font-size:10px;margin-right:4px;"></i>';
     }
 
-    return `<span class="tag-badge ${badgeClass}">${iconHtml}${escapeHtml(s)}</span>`;
+    return `<span class="tag-badge tag-color-${color}">${iconHtml}${escapeHtml(s)}</span>`;
   }
 
   function renderTableHeader() {
@@ -966,19 +990,19 @@ Flow 동영상 생성 프롬프트:`
 
     const customCols = appState.config.customColumns || [];
     const customColsHtml = customCols.map(col => `
-      <th style="width: 105px;" title="${escapeHtml(col.name)}">${escapeHtml(col.name)}</th>
+      <th class="col-custom" style="width: 105px;" title="${escapeHtml(col.name)}">${escapeHtml(col.name)}</th>
     `).join('');
 
     headRow.innerHTML = `
-      <th style="min-width: 220px;">콘텐츠 제목</th>
-      <th style="width: 105px;">진행상태</th>
-      <th style="width: 100px;">채널명</th>
-      <th style="width: 85px;">영상 형식</th>
-      <th style="width: 105px;">콘텐츠 유형</th>
+      <th class="col-title" style="width: 28%; min-width: 180px;">콘텐츠 제목</th>
+      <th class="col-status" style="width: 95px;">진행상태</th>
+      <th class="col-channel" style="width: 100px;">채널명</th>
+      <th class="col-format" style="width: 85px;">영상 형식</th>
+      <th class="col-category" style="width: 130px;">콘텐츠 유형</th>
       ${customColsHtml}
-      <th style="width: 125px;">포함 요소</th>
-      <th style="width: 100px;">등록일자</th>
-      <th style="width: 120px; text-align: center;">관리</th>
+      <th class="col-elements" style="width: 130px;">포함 요소</th>
+      <th class="col-date" style="width: 95px;">등록일자</th>
+      <th class="col-actions" style="width: 110px; text-align: center;">관리</th>
     `;
   }
 
@@ -1158,8 +1182,9 @@ Flow 동영상 생성 프롬프트:`
     const customCols = appState.config.customColumns || [];
 
     tbody.innerHTML = list.map(item => {
-      const formatClass = item.format === '쇼츠' ? 'tag-format-shorts' : (item.format === '롱폼' ? 'tag-format-long' : 'tag-generic');
-      const catClass = item.category === '광고' ? 'tag-category-ad' : 'tag-category-main';
+      const chColor = getItemColor(item.channel, 'blue');
+      const fmtColor = getItemColor(item.format, item.format === '쇼츠' ? 'rose' : 'indigo');
+      const catColor = getItemColor(item.category, item.category === '광고' ? 'amber' : 'green');
       const statusBadge = getStatusBadgeHtml(item.status);
 
       const hasScript = Boolean(item.script && item.script.trim());
@@ -1179,15 +1204,15 @@ Flow 동영상 생성 프롬프트:`
 
       return `
         <tr data-id="${item.id}">
-          <td>
+          <td class="col-title">
             <div class="table-title">
               <span>${escapeHtml(item.title)}</span>
             </div>
           </td>
           <td>${statusBadge}</td>
-          <td><span class="tag-badge tag-channel">${escapeHtml(item.channel || '-')}</span></td>
-          <td><span class="tag-badge ${formatClass}">${escapeHtml(item.format || '-')}</span></td>
-          <td><span class="tag-badge ${catClass}">${escapeHtml(item.category || '-')}</span></td>
+          <td><span class="tag-badge tag-color-${chColor}">${escapeHtml(item.channel || '-')}</span></td>
+          <td><span class="tag-badge tag-color-${fmtColor}">${escapeHtml(item.format || '-')}</span></td>
+          <td><span class="tag-badge tag-color-${catColor}">${escapeHtml(item.category || '-')}</span></td>
           ${customCellsHtml}
           <td>
             <div class="element-pill-group">
@@ -1278,8 +1303,9 @@ Flow 동영상 생성 프롬프트:`
     const videoEl = document.getElementById('modal-video-prompt');
     const notesEl = document.getElementById('modal-notes');
 
-    const formatClass = item.format === '쇼츠' ? 'tag-format-shorts' : (item.format === '롱폼' ? 'tag-format-long' : 'tag-generic');
-    const catClass = item.category === '광고' ? 'tag-category-ad' : 'tag-category-main';
+    const chColor = getItemColor(item.channel, 'blue');
+    const fmtColor = getItemColor(item.format, item.format === '쇼츠' ? 'rose' : 'indigo');
+    const catColor = getItemColor(item.category, item.category === '광고' ? 'amber' : 'green');
     const statusBadge = getStatusBadgeHtml(item.status);
 
     const customCols = appState.config.customColumns || [];
@@ -1294,9 +1320,9 @@ Flow 동영상 생성 프롬프트:`
 
     tagsEl.innerHTML = `
       ${statusBadge}
-      <span class="tag-badge tag-channel"><i class="fa-solid fa-tower-broadcast" style="margin-right:4px;"></i>${escapeHtml(item.channel)}</span>
-      <span class="tag-badge ${formatClass}">${escapeHtml(item.format)}</span>
-      <span class="tag-badge ${catClass}">${escapeHtml(item.category)}</span>
+      <span class="tag-badge tag-color-${chColor}"><i class="fa-solid fa-tower-broadcast" style="margin-right:4px;"></i>${escapeHtml(item.channel)}</span>
+      <span class="tag-badge tag-color-${fmtColor}">${escapeHtml(item.format)}</span>
+      <span class="tag-badge tag-color-${catColor}">${escapeHtml(item.category)}</span>
       ${customBadgesHtml}
     `;
 
@@ -2000,7 +2026,7 @@ Flow 동영상 생성 프롬프트:`
       renderSettings();
       renderContentList();
       showToast('진행상태가 삭제되었습니다.');
-    });
+    }, 'status');
 
     renderConfigList('channel-item-list', appState.config.channels, 'badge-channel-count', (idx) => {
       if (appState.config.channels.length <= 1) {
@@ -2011,8 +2037,9 @@ Flow 동영상 생성 프롬프트:`
       saveConfigToStorage();
       populateSelectOptions();
       renderSettings();
+      renderContentList();
       showToast('채널이 삭제되었습니다.');
-    });
+    }, 'channel');
 
     renderConfigList('format-item-list', appState.config.formats, 'badge-format-count', (idx) => {
       if (appState.config.formats.length <= 1) {
@@ -2023,8 +2050,9 @@ Flow 동영상 생성 프롬프트:`
       saveConfigToStorage();
       populateSelectOptions();
       renderSettings();
+      renderContentList();
       showToast('영상 형식이 삭제되었습니다.');
-    });
+    }, 'format');
 
     renderConfigList('category-item-list', appState.config.categories, 'badge-category-count', (idx) => {
       if (appState.config.categories.length <= 1) {
@@ -2035,8 +2063,9 @@ Flow 동영상 생성 프롬프트:`
       saveConfigToStorage();
       populateSelectOptions();
       renderSettings();
+      renderContentList();
       showToast('콘텐츠 유형이 삭제되었습니다.');
-    });
+    }, 'category');
 
     renderCustomColumnsSettings();
     renderQuickToolsSettings();
@@ -2209,19 +2238,66 @@ Flow 동영상 생성 프롬프트:`
     showToast('소 항목이 삭제되었습니다.');
   }
 
-  function renderConfigList(containerId, list, badgeId, onDelete) {
+  const COLOR_OPTIONS = [
+    { value: 'red', label: '빨강' },
+    { value: 'blue', label: '파랑' },
+    { value: 'green', label: '초록' },
+    { value: 'purple', label: '보라' },
+    { value: 'amber', label: '주황' },
+    { value: 'rose', label: '분홍' },
+    { value: 'cyan', label: '하늘' },
+    { value: 'indigo', label: '남색' },
+    { value: 'gray', label: '회색' }
+  ];
+
+  function renderConfigList(containerId, list, badgeId, onDelete, type = 'channel') {
     const container = document.getElementById(containerId);
     const badge = document.getElementById(badgeId);
     if (badge) badge.textContent = `${list.length}개`;
+    if (!container) return;
 
-    container.innerHTML = list.map((item, index) => `
-      <li class="settings-item-row">
-        <span>${escapeHtml(item)}</span>
-        <button class="btn-item-del" data-index="${index}" title="${escapeHtml(item)} 삭제">
-          <i class="fa-regular fa-trash-can"></i>
-        </button>
-      </li>
-    `).join('');
+    container.innerHTML = list.map((item, index) => {
+      const fallbackColor = type === 'status' ? (item === '진행중' ? 'red' : (item === '완료' ? 'green' : (item === '대기중' ? 'gray' : 'purple'))) : 'blue';
+      const curColor = getItemColor(item, fallbackColor);
+      const dotHtml = (type === 'status') ? `<span class="status-pulse-dot dot-${curColor}"></span>` : '';
+
+      const colorOptionsHtml = COLOR_OPTIONS.map(opt =>
+        `<option value="${opt.value}" ${opt.value === curColor ? 'selected' : ''}>${opt.label}</option>`
+      ).join('');
+
+      return `
+        <li class="settings-item-row">
+          <div class="settings-item-left">
+            <span class="tag-badge tag-color-${curColor}">
+              ${dotHtml}${escapeHtml(item)}
+            </span>
+          </div>
+          <div class="settings-item-ctrls">
+            <select class="settings-color-select" data-item="${escapeHtml(item)}" title="배지 색상 변경">
+              ${colorOptionsHtml}
+            </select>
+            <button class="btn-item-del" data-index="${index}" title="${escapeHtml(item)} 삭제">
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
+          </div>
+        </li>
+      `;
+    }).join('');
+
+    container.querySelectorAll('.settings-color-select').forEach(sel => {
+      sel.addEventListener('change', (e) => {
+        const item = sel.dataset.item;
+        const newColor = e.target.value;
+        if (!appState.config.itemColors) {
+          appState.config.itemColors = {};
+        }
+        appState.config.itemColors[item] = newColor;
+        saveConfigToStorage();
+        renderSettings();
+        renderContentList();
+        showToast(`'${item}' 색상이 변경되었습니다.`);
+      });
+    });
 
     container.querySelectorAll('.btn-item-del').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -2238,6 +2314,10 @@ Flow 동영상 생성 프롬프트:`
       return;
     }
 
+    if (!appState.config.itemColors) {
+      appState.config.itemColors = {};
+    }
+
     if (type === 'status') {
       if (!appState.config.statuses) appState.config.statuses = ['대기중', '진행중', '완료'];
       if (appState.config.statuses.includes(val)) {
@@ -2245,30 +2325,35 @@ Flow 동영상 생성 프롬프트:`
         return;
       }
       appState.config.statuses.push(val);
+      appState.config.itemColors[val] = 'purple';
     } else if (type === 'channel') {
       if (appState.config.channels.includes(val)) {
         showToast('이미 존재하는 채널명입니다.');
         return;
       }
       appState.config.channels.push(val);
+      appState.config.itemColors[val] = 'blue';
     } else if (type === 'format') {
       if (appState.config.formats.includes(val)) {
         showToast('이미 존재하는 영상 형식입니다.');
         return;
       }
       appState.config.formats.push(val);
+      appState.config.itemColors[val] = 'rose';
     } else if (type === 'category') {
       if (appState.config.categories.includes(val)) {
         showToast('이미 존재하는 콘텐츠 유형입니다.');
         return;
       }
       appState.config.categories.push(val);
+      appState.config.itemColors[val] = 'green';
     }
 
     input.value = '';
     saveConfigToStorage();
     populateSelectOptions();
     renderSettings();
+    renderContentList();
     showToast(`'${val}' 항목이 추가되었습니다.`);
   }
 
@@ -2589,7 +2674,8 @@ Flow 동영상 생성 프롬프트:`
               formats: parsed.config.formats || DEFAULT_CONFIG.formats,
               categories: parsed.config.categories || DEFAULT_CONFIG.categories,
               customColumns: parsed.config.customColumns || DEFAULT_CONFIG.customColumns,
-              quickTools: parsed.config.quickTools || DEFAULT_CONFIG.quickTools
+              quickTools: parsed.config.quickTools || DEFAULT_CONFIG.quickTools,
+              itemColors: { ...DEFAULT_ITEM_COLORS, ...(parsed.config.itemColors || {}) }
             };
           }
         } else {
