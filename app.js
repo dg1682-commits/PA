@@ -13,9 +13,11 @@
   const STORAGE_KEY_CONFIG = 'prompt_studio_config_v1';
 
   const DEFAULT_CONFIG = {
+    statuses: ['대기중', '진행중', '완료'],
     channels: ['비츠온TV', '아라쇼', '일신비츠온'],
     formats: ['롱폼', '쇼츠'],
-    categories: ['비츠온 콘텐츠', '광고']
+    categories: ['비츠온 콘텐츠', '광고'],
+    customColumns: []
   };
 
   // 사용자가 메모장으로 저장해둔 필수 참고 프롬프트 6종
@@ -448,9 +450,11 @@ Flow 동영상 생성 프롬프트:`
     {
       id: 'sample-1',
       title: '[비츠온TV] 2026 차세대 스마트 배선기구 라인업 상세 분석 및 설치 가이드',
+      status: '진행중',
       channel: '비츠온TV',
       format: '롱폼',
       category: '비츠온 콘텐츠',
+      customFields: {},
       createdAt: '2026-09-28T10:30:00',
       updatedAt: '2026-10-12T14:20:00',
       script: `[오프닝 - 00:00~00:45]
@@ -476,9 +480,11 @@ Flow 동영상 생성 프롬프트:`
     {
       id: 'sample-2',
       title: '[아라쇼] 3초 만에 방 분위기 호텔로 바꾸는 자석 트랙 라인조명 언박싱 쇼츠',
+      status: '완료',
       channel: '아라쇼',
       format: '쇼츠',
       category: '비츠온 콘텐츠',
+      customFields: {},
       createdAt: '2026-10-05T16:00:00',
       updatedAt: '2026-10-14T09:15:00',
       script: `[00:00~00:05]
@@ -500,9 +506,11 @@ Flow 동영상 생성 프롬프트:`
     {
       id: 'sample-3',
       title: '[일신비츠온] 대규모 산업용 고천장 LED 투광등 납품 및 B2B 협찬 프로모션',
+      status: '대기중',
       channel: '일신비츠온',
       format: '롱폼',
       category: '광고',
+      customFields: {},
       createdAt: '2026-10-02T11:00:00',
       updatedAt: '2026-10-10T17:30:00',
       script: `[B2B 홍보 영상 스크립트]
@@ -543,9 +551,11 @@ Flow 동영상 생성 프롬프트:`
     config: { ...DEFAULT_CONFIG },
     currentTab: 'tab-list',
     searchQuery: '',
+    filterStatus: '',
     filterChannel: '',
     filterFormat: '',
     filterCategory: '',
+    filterCustom: {}, // { col_id: 'val' }
     sortBy: 'updated-desc',
     activeModalId: null,
     deleteTargetId: null, // 삭제 대기 중인 콘텐츠 ID
@@ -567,21 +577,32 @@ Flow 동영상 생성 프롬프트:`
     try {
       const savedConfig = localStorage.getItem(STORAGE_KEY_CONFIG);
       if (savedConfig) {
-        appState.config = JSON.parse(savedConfig);
+        const parsed = JSON.parse(savedConfig);
+        appState.config = {
+          statuses: parsed.statuses && parsed.statuses.length ? parsed.statuses : [...DEFAULT_CONFIG.statuses],
+          channels: parsed.channels && parsed.channels.length ? parsed.channels : [...DEFAULT_CONFIG.channels],
+          formats: parsed.formats && parsed.formats.length ? parsed.formats : [...DEFAULT_CONFIG.formats],
+          categories: parsed.categories && parsed.categories.length ? parsed.categories : [...DEFAULT_CONFIG.categories],
+          customColumns: Array.isArray(parsed.customColumns) ? parsed.customColumns : []
+        };
       } else {
-        appState.config = { ...DEFAULT_CONFIG };
+        appState.config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
       }
 
       const savedItems = localStorage.getItem(STORAGE_KEY_ITEMS);
       if (savedItems) {
-        appState.contents = JSON.parse(savedItems);
+        appState.contents = JSON.parse(savedItems).map(item => ({
+          ...item,
+          status: item.status || '대기중',
+          customFields: item.customFields || {}
+        }));
       } else {
-        appState.contents = [...SAMPLE_ITEMS];
+        appState.contents = JSON.parse(JSON.stringify(SAMPLE_ITEMS));
       }
     } catch (e) {
       console.error('로컬스토리지 로딩 에러:', e);
-      appState.config = { ...DEFAULT_CONFIG };
-      appState.contents = [...SAMPLE_ITEMS];
+      appState.config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+      appState.contents = JSON.parse(JSON.stringify(SAMPLE_ITEMS));
     }
   }
 
@@ -604,9 +625,11 @@ Flow 동영상 생성 프롬프트:`
     if (db && isFirestoreConnected) {
       try {
         await db.collection('settings').doc('config').set({
+          statuses: appState.config.statuses,
           channels: appState.config.channels,
           formats: appState.config.formats,
           categories: appState.config.categories,
+          customColumns: appState.config.customColumns,
           updatedAt: new Date().toISOString()
         });
       } catch (err) {
@@ -711,9 +734,11 @@ Flow 동영상 생성 프롬프트:`
             cloudContents.push({
               id: doc.id,
               title: data.title || '',
+              status: data.status || '대기중',
               channel: data.channel || '',
               format: data.format || '',
               category: data.category || '',
+              customFields: data.customFields || {},
               script: data.script || '',
               imagePrompt: data.imagePrompt || '',
               videoPrompt: data.videoPrompt || '',
@@ -755,16 +780,22 @@ Flow 동영상 생성 프롬프트:`
           const cloudConfig = doc.data();
           if (cloudConfig.channels && cloudConfig.formats && cloudConfig.categories) {
             appState.config = {
+              statuses: cloudConfig.statuses && cloudConfig.statuses.length ? cloudConfig.statuses : [...DEFAULT_CONFIG.statuses],
               channels: cloudConfig.channels,
               formats: cloudConfig.formats,
-              categories: cloudConfig.categories
+              categories: cloudConfig.categories,
+              customColumns: Array.isArray(cloudConfig.customColumns) ? cloudConfig.customColumns : []
             };
             try {
               localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(appState.config));
             } catch (e) {}
             populateSelectOptions();
+            renderTableHeader();
+            renderFormCustomColumns();
             if (appState.currentTab === 'tab-settings') {
               renderSettings();
+            } else if (appState.currentTab === 'tab-list') {
+              renderContentList();
             }
           }
         } else {
@@ -795,9 +826,11 @@ Flow 동영상 생성 프롬프트:`
 
       const configRef = db.collection('settings').doc('config');
       batch.set(configRef, {
+        statuses: appState.config.statuses,
         channels: appState.config.channels,
         formats: appState.config.formats,
         categories: appState.config.categories,
+        customColumns: appState.config.customColumns,
         updatedAt: new Date().toISOString()
       });
 
@@ -897,33 +930,143 @@ Flow 동영상 생성 프롬프트:`
   }
 
   // ==========================================
-  // 5. 드롭다운 옵션 동적 갱신
+  // 5. 진행상태 배지 헬퍼 & 테이블 헤더 & 옵션 동적 갱신
   // ==========================================
-  function populateSelectOptions() {
-    const { channels, formats, categories } = appState.config;
+  function getStatusBadgeHtml(status) {
+    const s = status || '대기중';
+    let badgeClass = 'tag-status-custom';
+    let iconHtml = '<span class="status-pulse-dot"></span>';
 
+    if (s === '진행중') {
+      badgeClass = 'tag-status-progress';
+    } else if (s === '완료') {
+      badgeClass = 'tag-status-done';
+      iconHtml = '<i class="fa-solid fa-check" style="font-size:10px;margin-right:4px;"></i>';
+    } else if (s === '대기중') {
+      badgeClass = 'tag-status-wait';
+      iconHtml = '<i class="fa-regular fa-clock" style="font-size:10px;margin-right:4px;"></i>';
+    }
+
+    return `<span class="tag-badge ${badgeClass}">${iconHtml}${escapeHtml(s)}</span>`;
+  }
+
+  function renderTableHeader() {
+    const headRow = document.getElementById('table-head-row');
+    if (!headRow) return;
+
+    const customCols = appState.config.customColumns || [];
+    const customColsHtml = customCols.map(col => `
+      <th style="width: 105px;" title="${escapeHtml(col.name)}">${escapeHtml(col.name)}</th>
+    `).join('');
+
+    headRow.innerHTML = `
+      <th style="min-width: 220px;">콘텐츠 제목</th>
+      <th style="width: 105px;">진행상태</th>
+      <th style="width: 100px;">채널명</th>
+      <th style="width: 85px;">영상 형식</th>
+      <th style="width: 105px;">콘텐츠 유형</th>
+      ${customColsHtml}
+      <th style="width: 125px;">포함 요소</th>
+      <th style="width: 95px;">수정일자</th>
+      <th style="width: 120px; text-align: center;">관리</th>
+    `;
+  }
+
+  function populateSelectOptions() {
+    const { channels, formats, categories, statuses } = appState.config;
+    const stList = statuses && statuses.length ? statuses : ['대기중', '진행중', '완료'];
+
+    const filterStatus = document.getElementById('filter-status');
     const filterChannel = document.getElementById('filter-channel');
     const filterFormat = document.getElementById('filter-format');
     const filterCategory = document.getElementById('filter-category');
 
+    const formStatus = document.getElementById('form-status');
     const formChannel = document.getElementById('form-channel');
     const formFormat = document.getElementById('form-format');
     const formCategory = document.getElementById('form-category');
 
-    filterChannel.innerHTML = '<option value="">모든 채널 (전체)</option>' +
-      channels.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    if (filterStatus) {
+      filterStatus.innerHTML = '<option value="">모든 진행상태 (전체)</option>' +
+        stList.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+      filterStatus.value = appState.filterStatus || '';
+    }
 
-    formChannel.innerHTML = channels.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    if (formStatus) {
+      formStatus.innerHTML = stList.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    }
 
-    filterFormat.innerHTML = '<option value="">모든 형식 (전체)</option>' +
-      formats.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+    if (filterChannel) {
+      filterChannel.innerHTML = '<option value="">모든 채널 (전체)</option>' +
+        channels.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+      filterChannel.value = appState.filterChannel || '';
+    }
 
-    formFormat.innerHTML = formats.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+    if (formChannel) {
+      formChannel.innerHTML = channels.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    }
 
-    filterCategory.innerHTML = '<option value="">모든 유형 (전체)</option>' +
-      categories.map(cat => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join('');
+    if (filterFormat) {
+      filterFormat.innerHTML = '<option value="">모든 형식 (전체)</option>' +
+        formats.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+      filterFormat.value = appState.filterFormat || '';
+    }
 
-    formCategory.innerHTML = categories.map(cat => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join('');
+    if (formFormat) {
+      formFormat.innerHTML = formats.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+    }
+
+    if (filterCategory) {
+      filterCategory.innerHTML = '<option value="">모든 유형 (전체)</option>' +
+        categories.map(cat => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join('');
+      filterCategory.value = appState.filterCategory || '';
+    }
+
+    if (formCategory) {
+      formCategory.innerHTML = categories.map(cat => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join('');
+    }
+  }
+
+  function renderFormCustomColumns(item = null) {
+    const wrap = document.getElementById('form-custom-columns-wrap');
+    const container = document.getElementById('form-custom-columns-container');
+    if (!wrap || !container) return;
+
+    const customCols = appState.config.customColumns || [];
+    if (customCols.length === 0) {
+      wrap.classList.add('hidden');
+      container.innerHTML = '';
+      return;
+    }
+
+    wrap.classList.remove('hidden');
+    const currentValues = (item && item.customFields) || {};
+
+    container.innerHTML = customCols.map(col => {
+      const val = currentValues[col.id] || '';
+      const hasOptions = Array.isArray(col.options) && col.options.length > 0;
+
+      let inputControl = '';
+      if (hasOptions) {
+        inputControl = `
+          <select id="form-custom-${col.id}" class="custom-col-input" data-col-id="${col.id}">
+            <option value="">(선택 안함)</option>
+            ${col.options.map(opt => `<option value="${escapeHtml(opt)}" ${opt === val ? 'selected' : ''}>${escapeHtml(opt)}</option>`).join('')}
+          </select>
+        `;
+      } else {
+        inputControl = `
+          <input type="text" id="form-custom-${col.id}" class="custom-col-input" data-col-id="${col.id}" value="${escapeHtml(val)}" placeholder="${escapeHtml(col.name)} 입력">
+        `;
+      }
+
+      return `
+        <div class="form-group">
+          <label for="form-custom-${col.id}">${escapeHtml(col.name)}</label>
+          ${inputControl}
+        </div>
+      `;
+    }).join('');
   }
 
   // ==========================================
@@ -942,6 +1085,10 @@ Flow 동영상 생성 프롬프트:`
         const notes = (item.notes || '').toLowerCase();
         return title.includes(q) || script.includes(q) || imgP.includes(q) || vidP.includes(q) || notes.includes(q);
       });
+    }
+
+    if (appState.filterStatus) {
+      list = list.filter(item => (item.status || '대기중') === appState.filterStatus);
     }
 
     if (appState.filterChannel) {
@@ -982,7 +1129,7 @@ Flow 동영상 생성 프롬프트:`
 
     countEl.textContent = filteredList.length;
 
-    const isFiltered = appState.searchQuery || appState.filterChannel || appState.filterFormat || appState.filterCategory;
+    const isFiltered = appState.searchQuery || appState.filterStatus || appState.filterChannel || appState.filterFormat || appState.filterCategory;
     resetBtn.classList.toggle('hidden', !isFiltered);
 
     if (filteredList.length === 0) {
@@ -998,14 +1145,26 @@ Flow 동영상 생성 프롬프트:`
   }
 
   function renderTable(list, tbody) {
+    const customCols = appState.config.customColumns || [];
+
     tbody.innerHTML = list.map(item => {
       const formatClass = item.format === '쇼츠' ? 'tag-format-shorts' : (item.format === '롱폼' ? 'tag-format-long' : 'tag-generic');
       const catClass = item.category === '광고' ? 'tag-category-ad' : 'tag-category-main';
+      const statusBadge = getStatusBadgeHtml(item.status);
 
       const hasScript = Boolean(item.script && item.script.trim());
       const hasImage = Boolean(item.imagePrompt && item.imagePrompt.trim());
       const hasVideo = Boolean(item.videoPrompt && item.videoPrompt.trim());
       const hasNotes = Boolean(item.notes && item.notes.trim());
+
+      const customFields = item.customFields || {};
+      const customCellsHtml = customCols.map(col => {
+        const val = customFields[col.id];
+        if (val) {
+          return `<td><span class="tag-badge tag-custom-col" title="${escapeHtml(col.name)}: ${escapeHtml(val)}">${escapeHtml(val)}</span></td>`;
+        }
+        return `<td><span style="color:var(--text-light);font-size:12px;">-</span></td>`;
+      }).join('');
 
       return `
         <tr data-id="${item.id}">
@@ -1014,9 +1173,11 @@ Flow 동영상 생성 프롬프트:`
               <span>${escapeHtml(item.title)}</span>
             </div>
           </td>
+          <td>${statusBadge}</td>
           <td><span class="tag-badge tag-channel">${escapeHtml(item.channel || '-')}</span></td>
           <td><span class="tag-badge ${formatClass}">${escapeHtml(item.format || '-')}</span></td>
           <td><span class="tag-badge ${catClass}">${escapeHtml(item.category || '-')}</span></td>
+          ${customCellsHtml}
           <td>
             <div class="element-pill-group">
               <span class="element-pill ${hasScript ? 'active' : ''}" title="대본 ${hasScript ? '작성됨' : '없음'}">대본</span>
@@ -1107,11 +1268,24 @@ Flow 동영상 생성 프롬프트:`
 
     const formatClass = item.format === '쇼츠' ? 'tag-format-shorts' : (item.format === '롱폼' ? 'tag-format-long' : 'tag-generic');
     const catClass = item.category === '광고' ? 'tag-category-ad' : 'tag-category-main';
+    const statusBadge = getStatusBadgeHtml(item.status);
+
+    const customCols = appState.config.customColumns || [];
+    const customFields = item.customFields || {};
+    const customBadgesHtml = customCols.map(col => {
+      const val = customFields[col.id];
+      if (val) {
+        return `<span class="tag-badge tag-custom-col" title="${escapeHtml(col.name)}"><i class="fa-solid fa-cube" style="margin-right:4px;"></i>${escapeHtml(col.name)}: ${escapeHtml(val)}</span>`;
+      }
+      return '';
+    }).filter(Boolean).join('');
 
     tagsEl.innerHTML = `
+      ${statusBadge}
       <span class="tag-badge tag-channel"><i class="fa-solid fa-tower-broadcast" style="margin-right:4px;"></i>${escapeHtml(item.channel)}</span>
       <span class="tag-badge ${formatClass}">${escapeHtml(item.format)}</span>
       <span class="tag-badge ${catClass}">${escapeHtml(item.category)}</span>
+      ${customBadgesHtml}
     `;
 
     titleEl.textContent = item.title;
@@ -1145,13 +1319,22 @@ Flow 동영상 생성 프롬프트:`
     const createdStr = formatFullDateTime(item.createdAt);
     const updatedStr = formatFullDateTime(item.updatedAt);
 
+    const customCols = appState.config.customColumns || [];
+    const customFields = item.customFields || {};
+    const customLines = customCols.map(col => {
+      const val = customFields[col.id] || '미지정';
+      return `- **${col.name}**: ${val}`;
+    });
+
     const mdLines = [
       `# ${item.title || '제목 없음'}`,
       '',
       `## 📌 콘텐츠 메타 정보`,
+      `- **진행상태**: ${item.status || '대기중'}`,
       `- **채널명**: ${item.channel || '미지정'}`,
       `- **영상 형식**: ${item.format || '미지정'}`,
       `- **콘텐츠 유형**: ${item.category || '미지정'}`,
+      ...customLines,
       `- **생성 일자**: ${createdStr}`,
       `- **최근 수정 일자**: ${updatedStr}`,
       '',
@@ -1187,9 +1370,9 @@ Flow 동영상 생성 프롬프트:`
     const blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
 
-    // 파일명 생성: [채널명][형식]_제목_날짜.md (특수문자 정제)
+    // 파일명 생성: [진행상태][채널명][형식]_제목_날짜.md (특수문자 정제)
     const cleanTitle = (item.title || 'content').replace(/[\/\\?%*:|"<>]/g, '_').trim().slice(0, 40);
-    const filename = `[${item.channel || '채널'}][${item.format || '형식'}]_${cleanTitle}.md`;
+    const filename = `[${item.status || '상태'}][${item.channel || '채널'}][${item.format || '형식'}]_${cleanTitle}.md`;
 
     const a = document.createElement('a');
     a.href = url;
@@ -1328,10 +1511,16 @@ Flow 동영상 생성 프롬프트:`
     document.getElementById('editor-mode-badge').textContent = '새 콘텐츠 작성';
     document.getElementById('editor-form-title').textContent = '콘텐츠 프롬프트 및 대본 입력';
 
+    const defaultStatus = (appState.config.statuses && appState.config.statuses[0]) || '대기중';
+    const formStatus = document.getElementById('form-status');
+    if (formStatus) formStatus.value = defaultStatus;
+
     const nowIso = getLocalIsoString(new Date());
     document.getElementById('form-created-at').value = nowIso;
     document.getElementById('form-updated-at').value = nowIso;
     document.getElementById('script-counter').textContent = '0자';
+
+    renderFormCustomColumns(null);
   }
 
   function startEditing(id) {
@@ -1345,6 +1534,9 @@ Flow 동영상 생성 프롬프트:`
     document.getElementById('editor-form-title').textContent = `수정 중: ${item.title}`;
 
     document.getElementById('form-title').value = item.title || '';
+    const formStatus = document.getElementById('form-status');
+    if (formStatus) formStatus.value = item.status || '대기중';
+
     document.getElementById('form-channel').value = item.channel || appState.config.channels[0];
     document.getElementById('form-format').value = item.format || appState.config.formats[0];
     document.getElementById('form-category').value = item.category || appState.config.categories[0];
@@ -1357,6 +1549,7 @@ Flow 동영상 생성 프롬프트:`
     document.getElementById('form-video-prompt').value = item.videoPrompt || '';
     document.getElementById('form-notes').value = item.notes || '';
 
+    renderFormCustomColumns(item);
     updateScriptCharCount();
 
     closeDetailModal();
@@ -1366,6 +1559,8 @@ Flow 동영상 생성 프롬프트:`
   async function saveCurrentContent() {
     const editId = document.getElementById('edit-id').value;
     const title = document.getElementById('form-title').value.trim();
+    const formStatusEl = document.getElementById('form-status');
+    const status = formStatusEl ? formStatusEl.value : '대기중';
     const channel = document.getElementById('form-channel').value;
     const format = document.getElementById('form-format').value;
     const category = document.getElementById('form-category').value;
@@ -1380,6 +1575,16 @@ Flow 동영상 생성 프롬프트:`
       return;
     }
 
+    // 사용자 정의 컬럼 필드값 수집
+    const customFields = {};
+    const customInputs = document.querySelectorAll('.custom-col-input');
+    customInputs.forEach(input => {
+      const colId = input.dataset.colId;
+      if (colId) {
+        customFields[colId] = input.value.trim();
+      }
+    });
+
     const now = new Date().toISOString();
     let targetItem = null;
 
@@ -1389,9 +1594,11 @@ Flow 동영상 생성 프롬프트:`
         targetItem = {
           ...appState.contents[idx],
           title,
+          status,
           channel,
           format,
           category,
+          customFields,
           script,
           imagePrompt,
           videoPrompt,
@@ -1404,9 +1611,11 @@ Flow 동영상 생성 프롬프트:`
       targetItem = {
         id: 'item-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
         title,
+        status,
         channel,
         format,
         category,
+        customFields,
         script,
         imagePrompt,
         videoPrompt,
@@ -1639,6 +1848,19 @@ Flow 동영상 생성 프롬프트:`
   // 13. 분류 & 항목 설정 (Settings / Backend config)
   // ==========================================
   function renderSettings() {
+    renderConfigList('status-item-list', appState.config.statuses || ['대기중', '진행중', '완료'], 'badge-status-count', (idx) => {
+      if ((appState.config.statuses || []).length <= 1) {
+        showToast('최소 1개 이상의 진행상태가 필요합니다.');
+        return;
+      }
+      appState.config.statuses.splice(idx, 1);
+      saveConfigToStorage();
+      populateSelectOptions();
+      renderSettings();
+      renderContentList();
+      showToast('진행상태가 삭제되었습니다.');
+    });
+
     renderConfigList('channel-item-list', appState.config.channels, 'badge-channel-count', (idx) => {
       if (appState.config.channels.length <= 1) {
         showToast('최소 1개 이상의 채널이 필요합니다.');
@@ -1674,6 +1896,175 @@ Flow 동영상 생성 프롬프트:`
       renderSettings();
       showToast('콘텐츠 유형이 삭제되었습니다.');
     });
+
+    renderCustomColumnsSettings();
+  }
+
+  function renderCustomColumnsSettings() {
+    const customCols = appState.config.customColumns || [];
+    const countBadge = document.getElementById('badge-custom-cols-count');
+    if (countBadge) countBadge.textContent = `${customCols.length}개`;
+
+    const grid = document.getElementById('custom-columns-grid');
+    if (!grid) return;
+
+    if (customCols.length === 0) {
+      grid.innerHTML = `
+        <div class="empty-custom-cols" style="grid-column: 1 / -1; padding: 24px; text-align: center; color: var(--text-light); background: var(--bg-hover); border-radius: var(--radius-md); border: 1px dashed var(--border-color);">
+          <i class="fa-solid fa-table-columns" style="font-size: 24px; margin-bottom: 8px; display: block; opacity: 0.6;"></i>
+          <span>등록된 사용자 정의 컬럼이 없습니다. 상단에서 새 컬럼을 추가해보세요.</span>
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = customCols.map(col => {
+      const options = col.options || [];
+      const optionsBadges = options.map((opt, optIdx) => `
+        <span class="custom-col-tag">
+          ${escapeHtml(opt)}
+          <button type="button" class="btn-del-subopt" data-col-id="${col.id}" data-opt-idx="${optIdx}" title="삭제">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </span>
+      `).join('');
+
+      return `
+        <div class="custom-col-card" data-col-id="${col.id}">
+          <div class="custom-col-header">
+            <div class="custom-col-title-wrap">
+              <span class="custom-col-name">${escapeHtml(col.name)}</span>
+              <span class="custom-col-type">소 항목 ${options.length}개</span>
+            </div>
+            <button type="button" class="btn-del-custom-col" data-col-id="${col.id}" title="컬럼 삭제">
+              <i class="fa-regular fa-trash-can"></i> 삭제
+            </button>
+          </div>
+
+          <div class="custom-col-body">
+            <div class="sub-col-desc">소 컬럼 (선택 옵션 목록):</div>
+            <div class="custom-sub-options-list">
+              ${optionsBadges || '<span style="color:var(--text-light);font-size:12px;">(선택 옵션 없음 - 작성 시 자유 텍스트 입력창 제공)</span>'}
+            </div>
+            <div class="add-sub-opt-wrap">
+              <input type="text" class="input-new-subopt" data-col-id="${col.id}" placeholder="소 항목(옵션) 추가 후 Enter">
+              <button type="button" class="btn btn-sm btn-outline btn-add-subopt" data-col-id="${col.id}">추가</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // 이벤트 리스너 연결
+    grid.querySelectorAll('.btn-del-custom-col').forEach(btn => {
+      btn.addEventListener('click', () => {
+        deleteCustomColumn(btn.dataset.colId);
+      });
+    });
+
+    grid.querySelectorAll('.btn-add-subopt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const colId = btn.dataset.colId;
+        const input = grid.querySelector(`.input-new-subopt[data-col-id="${colId}"]`);
+        if (input) {
+          addSubColumnOption(colId, input.value.trim());
+          input.value = '';
+        }
+      });
+    });
+
+    grid.querySelectorAll('.input-new-subopt').forEach(input => {
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          const colId = input.dataset.colId;
+          addSubColumnOption(colId, input.value.trim());
+          input.value = '';
+        }
+      });
+    });
+
+    grid.querySelectorAll('.btn-del-subopt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        deleteSubColumnOption(btn.dataset.colId, parseInt(btn.dataset.optIdx, 10));
+      });
+    });
+  }
+
+  function createCustomColumn(colName) {
+    const name = (colName || '').trim();
+    if (!name) {
+      showToast('새 컬럼명을 입력해주세요.');
+      return;
+    }
+
+    if (!appState.config.customColumns) {
+      appState.config.customColumns = [];
+    }
+
+    if (appState.config.customColumns.some(c => c.name === name)) {
+      showToast('이미 존재하는 컬럼명입니다.');
+      return;
+    }
+
+    const newCol = {
+      id: 'col_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      name: name,
+      options: []
+    };
+
+    appState.config.customColumns.push(newCol);
+    saveConfigToStorage();
+    renderTableHeader();
+    renderSettings();
+    renderFormCustomColumns();
+    renderContentList();
+    showToast(`새 컬럼 '${name}'이(가) 추가되었습니다.`);
+  }
+
+  function deleteCustomColumn(colId) {
+    if (!confirm('이 컬럼을 삭제하시겠습니까? (콘텐츠에 저장된 해당 필드 데이터는 보존됩니다)')) return;
+
+    appState.config.customColumns = (appState.config.customColumns || []).filter(c => c.id !== colId);
+    saveConfigToStorage();
+    renderTableHeader();
+    renderSettings();
+    renderFormCustomColumns();
+    renderContentList();
+    showToast('컬럼이 삭제되었습니다.');
+  }
+
+  function addSubColumnOption(colId, optVal) {
+    const val = (optVal || '').trim();
+    if (!val) {
+      showToast('추가할 소 항목(옵션)을 입력해주세요.');
+      return;
+    }
+
+    const col = (appState.config.customColumns || []).find(c => c.id === colId);
+    if (!col) return;
+
+    if (!col.options) col.options = [];
+    if (col.options.includes(val)) {
+      showToast('이미 존재하는 소 항목입니다.');
+      return;
+    }
+
+    col.options.push(val);
+    saveConfigToStorage();
+    renderSettings();
+    renderFormCustomColumns();
+    showToast(`'${col.name}'에 소 항목 '${val}'이(가) 추가되었습니다.`);
+  }
+
+  function deleteSubColumnOption(colId, optIdx) {
+    const col = (appState.config.customColumns || []).find(c => c.id === colId);
+    if (!col || !col.options) return;
+
+    col.options.splice(optIdx, 1);
+    saveConfigToStorage();
+    renderSettings();
+    renderFormCustomColumns();
+    showToast('소 항목이 삭제되었습니다.');
   }
 
   function renderConfigList(containerId, list, badgeId, onDelete) {
@@ -1705,7 +2096,14 @@ Flow 동영상 생성 프롬프트:`
       return;
     }
 
-    if (type === 'channel') {
+    if (type === 'status') {
+      if (!appState.config.statuses) appState.config.statuses = ['대기중', '진행중', '완료'];
+      if (appState.config.statuses.includes(val)) {
+        showToast('이미 존재하는 진행상태입니다.');
+        return;
+      }
+      appState.config.statuses.push(val);
+    } else if (type === 'channel') {
       if (appState.config.channels.includes(val)) {
         showToast('이미 존재하는 채널명입니다.');
         return;
@@ -1769,9 +2167,11 @@ Flow 동영상 생성 프롬프트:`
           appState.contents = parsed.contents;
           if (parsed.config) {
             appState.config = {
+              statuses: parsed.config.statuses || DEFAULT_CONFIG.statuses,
               channels: parsed.config.channels || DEFAULT_CONFIG.channels,
               formats: parsed.config.formats || DEFAULT_CONFIG.formats,
-              categories: parsed.config.categories || DEFAULT_CONFIG.categories
+              categories: parsed.config.categories || DEFAULT_CONFIG.categories,
+              customColumns: parsed.config.customColumns || DEFAULT_CONFIG.customColumns
             };
           }
         } else {
@@ -1781,6 +2181,8 @@ Flow 동영상 생성 프롬프트:`
         saveContentsToStorage();
         saveConfigToStorage();
         populateSelectOptions();
+        renderTableHeader();
+        renderFormCustomColumns();
         renderContentList();
         renderSettings();
         showToast('데이터가 성공적으로 복원되었습니다!');
@@ -1923,6 +2325,14 @@ Flow 동영상 생성 프롬프트:`
     });
 
     // 필터 체인지
+    const filterStatus = document.getElementById('filter-status');
+    if (filterStatus) {
+      filterStatus.addEventListener('change', (e) => {
+        appState.filterStatus = e.target.value;
+        renderContentList();
+      });
+    }
+
     document.getElementById('filter-channel').addEventListener('change', (e) => {
       appState.filterChannel = e.target.value;
       renderContentList();
@@ -1946,6 +2356,7 @@ Flow 동영상 생성 프롬프트:`
     // 필터 초기화 버튼
     document.getElementById('btn-reset-filters').addEventListener('click', () => {
       appState.searchQuery = '';
+      appState.filterStatus = '';
       appState.filterChannel = '';
       appState.filterFormat = '';
       appState.filterCategory = '';
@@ -1953,6 +2364,8 @@ Flow 동영상 생성 프롬프트:`
 
       searchInput.value = '';
       searchClear.classList.add('hidden');
+      const filterStatusEl = document.getElementById('filter-status');
+      if (filterStatusEl) filterStatusEl.value = '';
       document.getElementById('filter-channel').value = '';
       document.getElementById('filter-format').value = '';
       document.getElementById('filter-category').value = '';
@@ -2089,6 +2502,15 @@ Flow 동영상 생성 프롬프트:`
     }
 
     // 설정 탭 - 항목 추가 버튼 및 엔터키
+    const btnAddStatus = document.getElementById('btn-add-status');
+    const inputNewStatus = document.getElementById('new-status-input');
+    if (btnAddStatus && inputNewStatus) {
+      btnAddStatus.addEventListener('click', () => addConfigItem('status', 'new-status-input'));
+      inputNewStatus.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') addConfigItem('status', 'new-status-input');
+      });
+    }
+
     document.getElementById('btn-add-channel').addEventListener('click', () => addConfigItem('channel', 'new-channel-input'));
     document.getElementById('new-channel-input').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') addConfigItem('channel', 'new-channel-input');
@@ -2103,6 +2525,22 @@ Flow 동영상 생성 프롬프트:`
     document.getElementById('new-category-input').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') addConfigItem('category', 'new-category-input');
     });
+
+    // 설정 탭 - 새 컬럼 추가 버튼 및 엔터키
+    const btnCreateCustomCol = document.getElementById('btn-create-custom-col');
+    const inputNewColName = document.getElementById('new-column-name-input');
+    if (btnCreateCustomCol && inputNewColName) {
+      btnCreateCustomCol.addEventListener('click', () => {
+        createCustomColumn(inputNewColName.value);
+        inputNewColName.value = '';
+      });
+      inputNewColName.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          createCustomColumn(inputNewColName.value);
+          inputNewColName.value = '';
+        }
+      });
+    }
 
     // Firebase 클라우드 관리 이벤트
     const btnSyncToCloud = document.getElementById('btn-sync-to-cloud');
@@ -2192,7 +2630,9 @@ service cloud.firestore {
   // ==========================================
   function initApp() {
     loadFromStorage();
+    renderTableHeader();
     populateSelectOptions();
+    renderFormCustomColumns();
     renderRefPromptTabs();
     setupEventListeners();
     updateStorageInfo();

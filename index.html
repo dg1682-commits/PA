@@ -151,8 +151,13 @@
 
           <div class="filter-group">
             <div class="select-wrapper">
+              <select id="filter-status">
+                <option value="">모든 진행상태 (전체)</option>
+              </select>
+            </div>
+            <div class="select-wrapper">
               <select id="filter-channel">
-                <option value="">모든 채널</option>
+                <option value="">모든 채널 (전체)</option>
               </select>
             </div>
             <div class="select-wrapper">
@@ -185,15 +190,16 @@
         <!-- 리스트(테이블) 전용 뷰 컨테이너 -->
         <div id="content-table-container" class="table-container">
           <table class="data-table">
-            <thead>
-              <tr>
-                <th style="width: 30%;">콘텐츠 제목</th>
-                <th style="width: 12%;">채널명</th>
-                <th style="width: 10%;">영상 형식</th>
-                <th style="width: 11%;">콘텐츠 유형</th>
-                <th style="width: 13%;">포함 요소</th>
-                <th style="width: 11%;">수정일자</th>
-                <th style="width: 13%; text-align: center;">관리</th>
+            <thead id="table-head">
+              <tr id="table-head-row">
+                <th style="min-width: 220px;">콘텐츠 제목</th>
+                <th style="width: 105px;">진행상태</th>
+                <th style="width: 100px;">채널명</th>
+                <th style="width: 85px;">영상 형식</th>
+                <th style="width: 105px;">콘텐츠 유형</th>
+                <th style="width: 125px;">포함 요소</th>
+                <th style="width: 95px;">수정일자</th>
+                <th style="width: 120px; text-align: center;">관리</th>
               </tr>
             </thead>
             <tbody id="table-body"></tbody>
@@ -243,7 +249,11 @@
                 </div>
               </div>
 
-              <div class="form-grid-3">
+              <div class="form-grid-4">
+                <div class="form-group">
+                  <label for="form-status" class="required">진행상태</label>
+                  <select id="form-status" required></select>
+                </div>
                 <div class="form-group">
                   <label for="form-channel" class="required">채널명</label>
                   <select id="form-channel" required></select>
@@ -256,6 +266,15 @@
                   <label for="form-category" class="required">콘텐츠 유형</label>
                   <select id="form-category" required></select>
                 </div>
+              </div>
+
+              <!-- 사용자 정의 컬럼 입력 필드들이 동적으로 삽입되는 영역 -->
+              <div id="form-custom-columns-wrap" class="custom-fields-wrap hidden">
+                <div class="custom-fields-header">
+                  <i class="fa-solid fa-table-columns"></i>
+                  <span>추가 사용자 정의 컬럼</span>
+                </div>
+                <div id="form-custom-columns-container" class="form-grid-3"></div>
               </div>
 
               <div class="form-grid-2">
@@ -433,10 +452,31 @@
         <div class="settings-container">
           <div class="settings-intro">
             <h3><i class="fa-solid fa-sliders"></i> 메타데이터 & 카테고리 항목 설정</h3>
-            <p>콘텐츠 등록 시 선택할 채널명, 영상 형식, 콘텐츠 유형을 자유롭게 추가하거나 수정할 수 있습니다.</p>
+            <p>콘텐츠 등록 시 선택할 진행상태, 채널명, 영상 형식, 콘텐츠 유형 및 <strong>새로운 사용자 정의 컬럼(소 컬럼)</strong>을 자유롭게 추가하거나 관리할 수 있습니다.</p>
           </div>
 
-          <div class="settings-grid">
+          <!-- 기본 분류 설정 그리드 (상태, 채널, 형식, 유형) -->
+          <div class="settings-grid settings-grid-4">
+            <!-- 1. 진행상태 설정 -->
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div class="setting-title-wrap">
+                  <i class="fa-solid fa-list-check icon-status"></i>
+                  <h4>진행상태 설정</h4>
+                </div>
+                <span class="badge" id="badge-status-count">3개</span>
+              </div>
+              <p class="settings-card-desc">콘텐츠 진행 상태(대기중, 진행중, 완료 등)를 관리합니다.</p>
+              
+              <div class="item-input-wrap">
+                <input type="text" id="new-status-input" placeholder="새 상태 입력 (예: 기획중, 검토중)">
+                <button class="btn btn-sm btn-primary" id="btn-add-status">추가</button>
+              </div>
+
+              <ul class="settings-item-list" id="status-item-list"></ul>
+            </div>
+
+            <!-- 2. 채널명 설정 -->
             <div class="settings-card">
               <div class="settings-card-header">
                 <div class="setting-title-wrap">
@@ -455,6 +495,7 @@
               <ul class="settings-item-list" id="channel-item-list"></ul>
             </div>
 
+            <!-- 3. 영상 형식 설정 -->
             <div class="settings-card">
               <div class="settings-card-header">
                 <div class="setting-title-wrap">
@@ -473,6 +514,7 @@
               <ul class="settings-item-list" id="format-item-list"></ul>
             </div>
 
+            <!-- 4. 콘텐츠 유형 설정 -->
             <div class="settings-card">
               <div class="settings-card-header">
                 <div class="setting-title-wrap">
@@ -490,6 +532,31 @@
 
               <ul class="settings-item-list" id="category-item-list"></ul>
             </div>
+          </div>
+
+          <!-- 5. 사용자 정의 컬럼 추가 & 소 컬럼 관리 카드 -->
+          <div class="settings-card custom-columns-builder-card">
+            <div class="settings-card-header">
+              <div class="setting-title-wrap">
+                <i class="fa-solid fa-table-columns icon-columns"></i>
+                <h4>새 컬럼 추가 (사용자 정의 컬럼 및 소 컬럼 항목 관리)</h4>
+              </div>
+              <span class="badge" id="badge-custom-cols-count">0개</span>
+            </div>
+            <p class="settings-card-desc">
+              기본 컬럼 외에 테이블 및 작성 폼에 표시하고 싶은 <strong>새로운 분류 컬럼</strong>(예: 담당자, 제작 단계, 타겟 연령층, 배포 플랫폼 등)을 추가하고, 각 컬럼 내에 들어갈 <strong>소 컬럼 항목(옵션)</strong>들을 자유롭게 구성할 수 있습니다.
+            </p>
+            
+            <div class="add-col-form">
+              <div class="add-col-inputs">
+                <input type="text" id="new-column-name-input" placeholder="추가할 새 컬럼명 입력 (예: 담당자, 제작단계, 시즌, 스폰서)">
+                <button class="btn btn-primary" id="btn-create-custom-col">
+                  <i class="fa-solid fa-plus"></i> 새 컬럼 만들기
+                </button>
+              </div>
+            </div>
+
+            <div class="custom-columns-list-wrap" id="custom-columns-grid"></div>
           </div>
 
           <!-- Firebase 클라우드 연동 상태 및 관리 카드 -->
