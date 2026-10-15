@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="starGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 배경 둥근 사각형 -->
+  <rect width="64" height="64" rx="15" fill="url(#bgGrad)"/>
+
+  <!-- 슬레이트(클래퍼보드) 상단 바 -->
+  <path d="M12 15 C12 13.5 13.5 12 15 12 L49 12 C50.5 12 52 13.5 52 15 L52 21 L12 21 Z" fill="#ffffff"/>
+  <!-- 사선 스트라이프 패턴 -->
+  <path d="M20 12 L16 21 M28 12 L24 21 M36 12 L32 21 M44 12 L40 21" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- 클래퍼보드 본체 -->
+  <path d="M12 23 L52 23 L52 47 C52 49.5 49.5 52 47 52 L17 52 C14.5 52 12 49.5 12 47 Z" fill="#ffffff"/>
+
+  <!-- 중앙 재생(Play) 아이콘 -->
+  <polygon points="28,30 28,44 41,37" fill="#2563eb"/>
+
+  <!-- AI 프롬프트 스파클(반짝임) 별 -->
+  <path d="M49 5 C49 10.5 52 13.5 57.5 13.5 C52 13.5 49 16.5 49 22 C49 16.5 46 13.5 40.5 13.5 C46 13.5 49 10.5 49 5 Z" fill="url(#starGrad)"/>
+</svg>
