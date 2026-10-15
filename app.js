@@ -446,85 +446,6 @@ Flow 동영상 생성 프롬프트:`
     }
   ];
 
-  const SAMPLE_ITEMS = [
-    {
-      id: 'sample-1',
-      title: '[비츠온TV] 2026 차세대 스마트 배선기구 라인업 상세 분석 및 설치 가이드',
-      status: '진행중',
-      channel: '비츠온TV',
-      format: '롱폼',
-      category: '비츠온 콘텐츠',
-      customFields: {},
-      createdAt: '2026-09-28T10:30:00',
-      updatedAt: '2026-10-12T14:20:00',
-      script: `[오프닝 - 00:00~00:45]
-안녕하세요! 전기 조명 솔루션의 모든 것, 비츠온TV의 진행자입니다.
-오늘 소개해드릴 제품은 2026년형 스마트 배선기구 신제품 시리즈입니다.
-요즘 인테리어의 완성은 조명과 스위치라는 말, 다들 들어보셨죠?
-단순히 전원을 켜고 끄는 것을 넘어, IoT 무선 제어와 모던한 무광 템퍼 디자인을 결합한 신제품을 언박싱부터 결선 방법까지 하나씩 짚어드립니다.
-
-[본론 1 - 제품 특징 및 스펙 - 00:45~03:15]
-가장 먼저 눈에 띄는 것은 슬림한 5mm 베젤 디자인입니다.
-벽면 밀착형 설계로 벽지와 들뜸 없이 완벽하게 마감됩니다.
-또한 난연 1등급 PC 소재를 적용하여 누전이나 고온 환경에서도 안전을 철저히 보장합니다.
-
-[본론 2 - 설치 및 시공 실습 - 03:15~07:00]
-실제 배선 연결 시 주의해야 할 3가지 팁을 보여드리겠습니다.
-첫째, 기존 단로 스위치와의 호환성 확인...`,
-      imagePrompt: `A high-end modern smart light switch installed on a minimal luxury matte concrete wall, soft ambient cinematic architectural lighting, 8k resolution, ultra-detailed, photorealistic interior design magazine style --ar 16:9`,
-      videoPrompt: `Cinematic macro slow motion dolly tracking shot focusing on a sleek white smart switch turning on, gentle blue LED indicator glows smoothly, realistic depth of field, 4k 60fps`,
-      notes: `* 촬영 준비물: 신형 스위치 1구/2구/3구 샘플 각 2개, 결선 실습용 모형 벽체, 절연 드라이버
-* 영상 러닝타임 목표: 약 9분 30초
-* 관련 카탈로그 PDF 다운로드 링크 설명란 필수 삽입`
-    },
-    {
-      id: 'sample-2',
-      title: '[아라쇼] 3초 만에 방 분위기 호텔로 바꾸는 자석 트랙 라인조명 언박싱 쇼츠',
-      status: '완료',
-      channel: '아라쇼',
-      format: '쇼츠',
-      category: '비츠온 콘텐츠',
-      customFields: {},
-      createdAt: '2026-10-05T16:00:00',
-      updatedAt: '2026-10-14T09:15:00',
-      script: `[00:00~00:05]
-(빠른 컷 전환 + 박수 소리)
-방 인테리어 싹 다 갈아엎기 귀찮으시죠? 딱 3초면 끝납니다!
-
-[00:05~00:20]
-타공도 필요 없이 자석으로 착! 붙이기만 하면 끝나는 일신비츠온 마그네틱 라인조명!
-원하는 위치로 스윽 밀어주기만 하면 스팟 조명 완성!
-
-[00:20~00:40]
-전구색, 주백색, 주광색 앱으로 색온도까지 자유자재 제어!
-지금 프로필 링크에서 공동구매 특가 확인하세요!`,
-      imagePrompt: `Vertical 9:16 layout, stylish female hand attaching a minimalist magnetic track light onto ceiling, warm aesthetic cozy bedroom, cinematic lighting, sharp focus, vibrant realistic photo`,
-      videoPrompt: `Fast vertical camera snap cut, hand effortlessly snapping magnetic LED light module to modern black ceiling track, instant warm illumination, dynamic smooth movement, viral TikTok style, 9:16`,
-      notes: `* 쇼츠 BGM: 경쾌하고 비트감 있는 신나는 팝 인스트루멘탈
-* 고정 댓글에 아라쇼 스마트스토어 할인 쿠폰 링크 추가`
-    },
-    {
-      id: 'sample-3',
-      title: '[일신비츠온] 대규모 산업용 고천장 LED 투광등 납품 및 B2B 협찬 프로모션',
-      status: '대기중',
-      channel: '일신비츠온',
-      format: '롱폼',
-      category: '광고',
-      customFields: {},
-      createdAt: '2026-10-02T11:00:00',
-      updatedAt: '2026-10-10T17:30:00',
-      script: `[B2B 홍보 영상 스크립트]
-공장 및 물류센터 에너지 효율의 핵심, 산업용 고효율 LED 고천장등 시리즈.
-기존 메탈할라이드 램프 대비 최대 70% 전기료 절감!
-방수 방진 IP65 등급 및 열 발산 알루미늄 다이캐스팅 바디 적용.
-전국 유통망과 신속한 A/S 지원 시스템을 일신비츠온이 약속합니다.`,
-      imagePrompt: `Spacious modern industrial logistics warehouse illuminated by bright clean high bay LED industrial ceiling lights, high contrast, wide angle lens, commercial photography, 8k --ar 16:9`,
-      videoPrompt: `Aerial wide angle drone flythrough in a massive high-tech clean warehouse with powerful industrial ceiling LED illumination, smooth cinematic motion`,
-      notes: `* 타겟: 전기 시공업체, 건설사 구매팀, 물류센터 운영 관리자
-* 11월 전기공사협회 정기 간행물과 동시 프로모션 진행`
-    }
-  ];
-
   // ==========================================
   // Firebase Firestore 설정 및 인스턴스
   // ==========================================
@@ -591,19 +512,22 @@ Flow 동영상 생성 프롬프트:`
 
       const savedItems = localStorage.getItem(STORAGE_KEY_ITEMS);
       if (savedItems) {
-        appState.contents = JSON.parse(savedItems).map(item => ({
-          ...item,
-          status: item.status || '대기중',
-          customFields: item.customFields || {},
-          comments: Array.isArray(item.comments) ? item.comments : []
-        }));
+        appState.contents = JSON.parse(savedItems)
+          .filter(item => item && !String(item.id || '').startsWith('sample-'))
+          .map(item => ({
+            ...item,
+            status: item.status || '대기중',
+            customFields: item.customFields || {},
+            comments: Array.isArray(item.comments) ? item.comments : []
+          }));
+        localStorage.setItem(STORAGE_KEY_ITEMS, JSON.stringify(appState.contents));
       } else {
-        appState.contents = JSON.parse(JSON.stringify(SAMPLE_ITEMS));
+        appState.contents = [];
       }
     } catch (e) {
       console.error('로컬스토리지 로딩 에러:', e);
       appState.config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
-      appState.contents = JSON.parse(JSON.stringify(SAMPLE_ITEMS));
+      appState.contents = [];
     }
   }
 
@@ -719,18 +643,25 @@ Flow 동영상 생성 프롬프트:`
       unsubscribeContents = db.collection('contents').onSnapshot((snapshot) => {
         isFirestoreConnected = true;
         updateSyncStatus('connected', 'Firebase 클라우드 연동됨');
+        isInitialFirestoreSyncDone = true;
 
         if (snapshot.empty) {
-          // Firestore 컬렉션이 완전히 비어있을 때 (최초 실행 시 로컬 데이터 자동 업로드)
-          if (!isInitialFirestoreSyncDone && appState.contents && appState.contents.length > 0) {
-            isInitialFirestoreSyncDone = true;
-            console.log('클라우드가 비어 있어 로컬 기본/작성 데이터를 초기 업로드합니다.');
-            uploadAllLocalToFirestore(true);
+          appState.contents = [];
+          saveContentsToStorage();
+
+          if (appState.currentTab === 'tab-list') {
+            renderContentList();
+          } else if (appState.currentTab === 'tab-dashboard') {
+            renderDashboard();
           }
         } else {
-          isInitialFirestoreSyncDone = true;
           const cloudContents = [];
           snapshot.forEach(doc => {
+            // Firestore에 남아있을 수 있는 샘플 데이터(sample-*) 자동 영구 삭제
+            if (String(doc.id).startsWith('sample-')) {
+              doc.ref.delete().catch(() => {});
+              return;
+            }
             const data = doc.data();
             cloudContents.push({
               id: doc.id,
@@ -868,6 +799,10 @@ Flow 동영상 생성 프롬프트:`
       if (!snapshot.empty) {
         const cloudContents = [];
         snapshot.forEach(doc => {
+          if (String(doc.id).startsWith('sample-')) {
+            doc.ref.delete().catch(() => {});
+            return;
+          }
           cloudContents.push({ id: doc.id, ...doc.data() });
         });
         appState.contents = cloudContents;
@@ -877,6 +812,11 @@ Flow 동영상 생성 프롬프트:`
         updateStorageInfo();
         showToast(`클라우드에서 ${cloudContents.length}건을 성공적으로 불러왔습니다.`);
       } else {
+        appState.contents = [];
+        saveContentsToStorage();
+        renderContentList();
+        renderDashboard();
+        updateStorageInfo();
         showToast('클라우드에 저장된 콘텐츠가 없습니다.');
       }
     } catch (err) {
@@ -2326,20 +2266,6 @@ Flow 동영상 생성 프롬프트:`
     reader.readAsText(file);
   }
 
-  function loadSampleData() {
-    if (!confirm('기본 샘플 데이터를 추가하시겠습니까? (기존 데이터와 병합됩니다)')) {
-      return;
-    }
-    SAMPLE_ITEMS.forEach(sample => {
-      if (!appState.contents.some(c => c.title === sample.title)) {
-        appState.contents.push({ ...sample, id: 'sample-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4) });
-      }
-    });
-    saveContentsToStorage();
-    renderContentList();
-    showToast('샘플 데이터가 로드되었습니다.');
-  }
-
   // ==========================================
   // 15. 유틸리티 함수
   // ==========================================
@@ -2758,8 +2684,6 @@ service cloud.firestore {
         e.target.value = '';
       }
     });
-
-    document.getElementById('btn-load-sample').addEventListener('click', loadSampleData);
 
     // ESC 키로 모달 닫기
     document.addEventListener('keydown', (e) => {
