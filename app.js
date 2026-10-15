@@ -556,7 +556,7 @@ Flow 동영상 생성 프롬프트:`
     filterFormat: '',
     filterCategory: '',
     filterCustom: {}, // { col_id: 'val' }
-    sortBy: 'updated-desc',
+    sortBy: 'created-desc',
     activeModalId: null,
     deleteTargetId: null, // 삭제 대기 중인 콘텐츠 ID
     activeRefId: 'ref-01',
@@ -594,7 +594,8 @@ Flow 동영상 생성 프롬프트:`
         appState.contents = JSON.parse(savedItems).map(item => ({
           ...item,
           status: item.status || '대기중',
-          customFields: item.customFields || {}
+          customFields: item.customFields || {},
+          comments: Array.isArray(item.comments) ? item.comments : []
         }));
       } else {
         appState.contents = JSON.parse(JSON.stringify(SAMPLE_ITEMS));
@@ -743,6 +744,7 @@ Flow 동영상 생성 프롬프트:`
               imagePrompt: data.imagePrompt || '',
               videoPrompt: data.videoPrompt || '',
               notes: data.notes || '',
+              comments: Array.isArray(data.comments) ? data.comments : [],
               createdAt: data.createdAt || new Date().toISOString(),
               updatedAt: data.updatedAt || data.createdAt || new Date().toISOString()
             });
@@ -967,7 +969,7 @@ Flow 동영상 생성 프롬프트:`
       <th style="width: 105px;">콘텐츠 유형</th>
       ${customColsHtml}
       <th style="width: 125px;">포함 요소</th>
-      <th style="width: 95px;">수정일자</th>
+      <th style="width: 100px;">등록일자</th>
       <th style="width: 120px; text-align: center;">관리</th>
     `;
   }
@@ -1104,16 +1106,16 @@ Flow 동영상 생성 프롬프트:`
     }
 
     list.sort((a, b) => {
-      if (appState.sortBy === 'updated-desc') {
-        return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
-      } else if (appState.sortBy === 'created-desc') {
+      if (appState.sortBy === 'created-desc') {
         return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
       } else if (appState.sortBy === 'created-asc') {
         return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+      } else if (appState.sortBy === 'updated-desc') {
+        return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
       } else if (appState.sortBy === 'title-asc') {
         return (a.title || '').localeCompare(b.title || '');
       }
-      return 0;
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
     });
 
     return list;
@@ -1156,6 +1158,7 @@ Flow 동영상 생성 프롬프트:`
       const hasImage = Boolean(item.imagePrompt && item.imagePrompt.trim());
       const hasVideo = Boolean(item.videoPrompt && item.videoPrompt.trim());
       const hasNotes = Boolean(item.notes && item.notes.trim());
+      const cmtCount = (item.comments || []).length;
 
       const customFields = item.customFields || {};
       const customCellsHtml = customCols.map(col => {
@@ -1184,11 +1187,12 @@ Flow 동영상 생성 프롬프트:`
               <span class="element-pill ${hasImage ? 'active' : ''}" title="이미지 프롬프트 ${hasImage ? '작성됨' : '없음'}">이미지</span>
               <span class="element-pill ${hasVideo ? 'active' : ''}" title="영상 프롬프트 ${hasVideo ? '작성됨' : '없음'}">영상</span>
               <span class="element-pill ${hasNotes ? 'active' : ''}" title="비고 ${hasNotes ? '작성됨' : '없음'}">비고</span>
+              ${cmtCount > 0 ? `<span class="element-pill active element-pill-comment" title="댓글 ${cmtCount}개"><i class="fa-regular fa-comment"></i> ${cmtCount}</span>` : ''}
             </div>
           </td>
           <td>
-            <div class="table-date-text">
-              ${formatDisplayDate(item.updatedAt || item.createdAt)}
+            <div class="table-date-text" title="등록: ${formatFullDateTime(item.createdAt)}&#10;수정: ${formatFullDateTime(item.updatedAt)}">
+              ${formatDisplayDate(item.createdAt || item.updatedAt)}
             </div>
           </td>
           <td>
@@ -1297,6 +1301,8 @@ Flow 동영상 생성 프롬프트:`
     videoEl.textContent = item.videoPrompt || '(작성된 영상 프롬프트가 없습니다.)';
     notesEl.textContent = item.notes || '(작성된 비고사항이 없습니다.)';
 
+    renderModalComments(item);
+
     modal.classList.remove('hidden');
   }
 
@@ -1304,6 +1310,124 @@ Flow 동영상 생성 프롬프트:`
     const modal = document.getElementById('detail-modal');
     modal.classList.add('hidden');
     appState.activeModalId = null;
+
+    const cmtInput = document.getElementById('comment-text-input');
+    if (cmtInput) cmtInput.value = '';
+  }
+
+  // ==========================================
+  // 7-1. 상세 보기 모달 내 댓글(피드백) 렌더링 & 관리
+  // ==========================================
+  function renderModalComments(item) {
+    const listEl = document.getElementById('modal-comments-list');
+    const countEl = document.getElementById('modal-comments-count');
+    if (!listEl) return;
+
+    const comments = Array.isArray(item.comments) ? item.comments : [];
+    if (countEl) countEl.textContent = `${comments.length}`;
+
+    if (comments.length === 0) {
+      listEl.innerHTML = `
+        <div class="empty-comments">
+          <i class="fa-regular fa-comment-dots"></i>
+          <span>아직 등록된 댓글이 없습니다. 첫 의견이나 피드백을 남겨보세요.</span>
+        </div>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = comments.map(cmt => `
+      <div class="comment-item" data-comment-id="${cmt.id}">
+        <div class="comment-item-header">
+          <div class="comment-item-user">
+            <span class="comment-avatar"><i class="fa-solid fa-user"></i></span>
+            <span class="comment-author-name">${escapeHtml(cmt.author || '작성자')}</span>
+            <span class="comment-time">${formatFullDateTime(cmt.createdAt)}</span>
+          </div>
+          <button type="button" class="btn-del-comment" data-comment-id="${cmt.id}" title="댓글 삭제">
+            <i class="fa-regular fa-trash-can"></i>
+          </button>
+        </div>
+        <div class="comment-item-content">${escapeHtml(cmt.text).replace(/\n/g, '<br>')}</div>
+      </div>
+    `).join('');
+
+    listEl.querySelectorAll('.btn-del-comment').forEach(btn => {
+      btn.addEventListener('click', () => {
+        deleteComment(item.id, btn.dataset.commentId);
+      });
+    });
+  }
+
+  async function addComment(contentId) {
+    const item = appState.contents.find(c => c.id === contentId);
+    if (!item) return;
+
+    const authorInput = document.getElementById('comment-author-input');
+    const textInput = document.getElementById('comment-text-input');
+    if (!textInput) return;
+
+    const text = textInput.value.trim();
+    if (!text) {
+      showToast('댓글 내용을 입력해주세요.');
+      textInput.focus();
+      return;
+    }
+
+    const author = (authorInput && authorInput.value.trim()) ? authorInput.value.trim() : '작성자';
+
+    if (!Array.isArray(item.comments)) {
+      item.comments = [];
+    }
+
+    const newComment = {
+      id: 'cmt-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+      author,
+      text,
+      createdAt: new Date().toISOString()
+    };
+
+    item.comments.push(newComment);
+    saveContentsToStorage();
+    renderModalComments(item);
+    renderContentList(); // 테이블 목록 내 댓글 카운트 뱃지 즉시 갱신
+    textInput.value = '';
+
+    if (db && isFirestoreConnected) {
+      try {
+        await db.collection('contents').doc(item.id).set(item);
+        showToast('댓글이 등록되었습니다 (클라우드 동기화 완료)');
+      } catch (err) {
+        console.warn('Firestore 댓글 저장 실패:', err);
+        showToast('댓글이 로컬에 저장되었습니다.');
+      }
+    } else {
+      showToast('댓글이 등록되었습니다.');
+    }
+  }
+
+  async function deleteComment(contentId, commentId) {
+    const item = appState.contents.find(c => c.id === contentId);
+    if (!item || !Array.isArray(item.comments)) return;
+
+    if (!confirm('이 댓글을 삭제하시겠습니까?')) return;
+
+    item.comments = item.comments.filter(c => c.id !== commentId);
+    saveContentsToStorage();
+    renderModalComments(item);
+    renderContentList(); // 테이블 목록 내 댓글 카운트 뱃지 즉시 갱신
+
+    if (db && isFirestoreConnected) {
+      try {
+        await db.collection('contents').doc(item.id).set(item);
+        showToast('댓글이 삭제되었습니다.');
+      } catch (err) {
+        console.warn('Firestore 댓글 삭제 동기화 실패:', err);
+        showToast('댓글이 삭제되었습니다 (로컬)');
+      }
+    } else {
+      showToast('댓글이 삭제되었습니다.');
+    }
   }
 
   // ==========================================
@@ -1325,6 +1449,14 @@ Flow 동영상 생성 프롬프트:`
       const val = customFields[col.id] || '미지정';
       return `- **${col.name}**: ${val}`;
     });
+
+    const commentLines = (item.comments && item.comments.length > 0) ? [
+      '',
+      `---`,
+      '',
+      `## 💬 피드백 및 댓글 (${item.comments.length})`,
+      ...item.comments.map(c => `- **[${formatFullDateTime(c.createdAt)}] ${c.author || '작성자'}**: ${c.text}`),
+    ] : [];
 
     const mdLines = [
       `# ${item.title || '제목 없음'}`,
@@ -1361,6 +1493,7 @@ Flow 동영상 생성 프롬프트:`
       '',
       `## 📝 비고 및 메모 (Notes)`,
       item.notes ? item.notes : '*(작성된 비고사항이 없습니다)*',
+      ...commentLines,
       '',
       `---`,
       `*Generated by Prompt Studio - ${new Date().toISOString().slice(0, 10)}*`
@@ -2360,7 +2493,7 @@ Flow 동영상 생성 프롬프트:`
       appState.filterChannel = '';
       appState.filterFormat = '';
       appState.filterCategory = '';
-      appState.sortBy = 'updated-desc';
+      appState.sortBy = 'created-desc';
 
       searchInput.value = '';
       searchClear.classList.add('hidden');
@@ -2369,7 +2502,7 @@ Flow 동영상 생성 프롬프트:`
       document.getElementById('filter-channel').value = '';
       document.getElementById('filter-format').value = '';
       document.getElementById('filter-category').value = '';
-      document.getElementById('sort-order').value = 'updated-desc';
+      document.getElementById('sort-order').value = 'created-desc';
 
       renderContentList();
     });
@@ -2460,6 +2593,29 @@ Flow 동영상 생성 프롬프트:`
       const item = appState.contents.find(c => c.id === appState.activeModalId);
       if (item && item.notes) copyToClipboard(item.notes, '비고 내용이 복사되었습니다.');
     });
+
+    // 상세 모달 내 댓글 등록 이벤트
+    const btnSubmitComment = document.getElementById('btn-submit-comment');
+    if (btnSubmitComment) {
+      btnSubmitComment.addEventListener('click', () => {
+        if (appState.activeModalId) {
+          addComment(appState.activeModalId);
+        }
+      });
+    }
+
+    const commentTextInput = document.getElementById('comment-text-input');
+    if (commentTextInput) {
+      commentTextInput.addEventListener('keydown', (e) => {
+        // Enter 단독 등록 (Shift+Enter는 줄바꿈)
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          if (appState.activeModalId) {
+            addComment(appState.activeModalId);
+          }
+        }
+      });
+    }
 
     // ==========================================
     // 삭제 확인 모달 이벤트

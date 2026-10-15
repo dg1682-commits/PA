@@ -172,9 +172,9 @@
             </div>
             <div class="select-wrapper">
               <select id="sort-order">
-                <option value="updated-desc">최근 수정순</option>
-                <option value="created-desc">최신 등록순</option>
-                <option value="created-asc">오래된 순</option>
+                <option value="created-desc" selected>등록순 (최신순 고정)</option>
+                <option value="created-asc">등록순 (과거순)</option>
+                <option value="updated-desc">수정일자순</option>
                 <option value="title-asc">제목 오름차순</option>
               </select>
             </div>
@@ -198,7 +198,7 @@
                 <th style="width: 85px;">영상 형식</th>
                 <th style="width: 105px;">콘텐츠 유형</th>
                 <th style="width: 125px;">포함 요소</th>
-                <th style="width: 95px;">수정일자</th>
+                <th style="width: 100px;">등록일자</th>
                 <th style="width: 120px; text-align: center;">관리</th>
               </tr>
             </thead>
@@ -674,6 +674,34 @@
             <button class="btn-copy-tool" id="btn-modal-copy-notes"><i class="fa-regular fa-copy"></i> 복사</button>
           </div>
           <div class="detail-content-box" id="modal-notes"></div>
+        </div>
+
+        <!-- 피드백 & 댓글 섹션 -->
+        <div class="detail-section modal-comment-section">
+          <div class="detail-label-bar">
+            <span><i class="fa-regular fa-comments"></i> 피드백 & 작업 메모 댓글 (<span id="modal-comments-count">0</span>)</span>
+          </div>
+          
+          <!-- 댓글 입력 카드 -->
+          <div class="comment-input-card">
+            <div class="comment-input-top">
+              <div class="comment-author-wrap">
+                <i class="fa-solid fa-user-pen"></i>
+                <input type="text" id="comment-author-input" class="comment-author-input" placeholder="작성자명 (예: 김기획)" maxlength="15">
+              </div>
+              <span class="comment-shortcut-hint"><i class="fa-regular fa-keyboard"></i> Enter로 등록 (줄바꿈: Shift+Enter)</span>
+            </div>
+            <textarea id="comment-text-input" class="comment-text-input" rows="2" placeholder="이 콘텐츠에 대한 아이디어, 수정 요청 사항, 진행 피드백을 남겨보세요..."></textarea>
+            <div class="comment-input-bottom">
+              <span class="comment-bottom-tip">작성 시 날짜와 시간이 자동 기록됩니다.</span>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-submit-comment">
+                <i class="fa-solid fa-paper-plane"></i> 댓글 등록
+              </button>
+            </div>
+          </div>
+
+          <!-- 댓글 목록 -->
+          <div class="comments-list" id="modal-comments-list"></div>
         </div>
       </div>
 
