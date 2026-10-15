@@ -1,0 +1,23 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // [프롬프트 저장소] Firestore 보안 규칙
+    // 콘솔(https://console.firebase.google.com/) -> Firestore Database -> 규칙(Rules) 탭에 이 내용을 붙여넣기 하세요.
+    
+    // 1. 콘텐츠 컬렉션 (대본, 이미지/영상 프롬프트, 비고)
+    match /contents/{contentId} {
+      allow read, write: if true;
+    }
+    
+    // 2. 설정 컬렉션 (채널명, 영상 형식, 콘텐츠 유형 등)
+    match /settings/{settingId} {
+      allow read, write: if true;
+    }
+
+    // 기본 전체 접근 허용 (내부 사내용 또는 프로토타입용)
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

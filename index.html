@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>콘텐츠 프롬프트 & 대본 저장소</title>
+  <!-- Google Fonts & Font Awesome Icons & Chart.js -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- 사이드바 네비게이션 -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-film"></i>
+        </div>
+        <div class="brand-text">
+          <h1>Prompt Studio</h1>
+          <span>콘텐츠 제작 아카이브</span>
+        </div>
+      </div>
+
+      <!-- 상단 메뉴 -->
+      <nav class="sidebar-menu">
+        <button class="menu-item active" data-tab="tab-list">
+          <i class="fa-solid fa-list-check"></i>
+          <span>콘텐츠 목록</span>
+        </button>
+        <button class="menu-item" data-tab="tab-editor" id="btn-create-new">
+          <i class="fa-solid fa-pen-to-square"></i>
+          <span>새 콘텐츠 작성</span>
+        </button>
+        <button class="menu-item" data-tab="tab-dashboard">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>데이터 대시보드</span>
+        </button>
+        <button class="menu-item" data-tab="tab-settings">
+          <i class="fa-solid fa-sliders"></i>
+          <span>분류 & 항목 설정</span>
+        </button>
+      </nav>
+
+      <!-- 제작 도구 바로가기 퀵 링크 영역 (새 탭 연결) -->
+      <div class="sidebar-quick-tools">
+        <div class="sidebar-section-title">
+          <span>제작 도구 바로가기</span>
+          <i class="fa-solid fa-arrow-up-right-from-square title-ext-icon"></i>
+        </div>
+        <div class="quick-tools-list">
+          <a href="https://flow.google.com/" target="_blank" rel="noopener noreferrer" class="tool-link-item" title="Google Flow (새 탭으로 열기)">
+            <span class="tool-icon tool-flow"><i class="fa-solid fa-video"></i></span>
+            <span class="tool-name">FLOW</span>
+            <i class="fa-solid fa-arrow-up-right-from-square tool-arrow"></i>
+          </a>
+
+          <a href="https://studio.typecast.ai/text-to-speech?utm_source=google&utm_medium=cpc&utm_campaign=kr_23_search_generic&utm_content=pc_generic_rsa_001&utm_term=tts&gad_source=1&gad_campaignid=18848876335&gbraid=0AAAAACvnHj_MKchr_6zqYfLL3SIEvRMNx&gclid=Cj0KCQiA7-rMBhCFARIsAKnLKtD03R3ZRgIoRMOK8dkOWlfYTghURpwpe8MK_Ouox0MklIlIKUs4XgIaAjmzEALw_wcB" target="_blank" rel="noopener noreferrer" class="tool-link-item" title="타입캐스트 TTS (새 탭으로 열기)">
+            <span class="tool-icon tool-tts"><i class="fa-solid fa-microphone-lines"></i></span>
+            <span class="tool-name">타입캐스트 (TTS)</span>
+            <i class="fa-solid fa-arrow-up-right-from-square tool-arrow"></i>
+          </a>
+
+          <a href="https://www.motionelements.com/ko/" target="_blank" rel="noopener noreferrer" class="tool-link-item" title="모션엘리먼츠 (새 탭으로 열기)">
+            <span class="tool-icon tool-motion"><i class="fa-solid fa-shapes"></i></span>
+            <span class="tool-name">모션엘리먼츠</span>
+            <i class="fa-solid fa-arrow-up-right-from-square tool-arrow"></i>
+          </a>
+
+          <a href="https://express.adobe.com/" target="_blank" rel="noopener noreferrer" class="tool-link-item" title="어도비 익스프레스 (새 탭으로 열기)">
+            <span class="tool-icon tool-adobe"><i class="fa-solid fa-palette"></i></span>
+            <span class="tool-name">어도비 익스프레스</span>
+            <i class="fa-solid fa-arrow-up-right-from-square tool-arrow"></i>
+          </a>
+
+          <a href="https://suno.com/create?signup_source=splashpage&referrer=%2Fhome&redirected_from=signin" target="_blank" rel="noopener noreferrer" class="tool-link-item" title="SUNO AI (새 탭으로 열기)">
+            <span class="tool-icon tool-suno"><i class="fa-solid fa-music"></i></span>
+            <span class="tool-name">SUNO AI</span>
+            <i class="fa-solid fa-arrow-up-right-from-square tool-arrow"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- 항상 고정되는 필수 참고 프롬프트 퀵 버튼 영역 -->
+      <div class="sidebar-ref-section">
+        <button class="btn-ref-prompt" id="btn-open-ref-modal" title="필수 참고 프롬프트 모달 열기">
+          <div class="btn-ref-icon">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+          </div>
+          <div class="btn-ref-text">
+            <strong>참고 프롬프트</strong>
+            <span>주제·대본·Flow 6종</span>
+          </div>
+          <i class="fa-solid fa-chevron-right btn-ref-arrow"></i>
+        </button>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="cloud-sync-card">
+          <div class="sync-status-row">
+            <div class="sync-status-left">
+              <span class="sync-indicator-dot connecting" id="sync-dot"></span>
+              <span class="sync-status-title" id="sync-status-text">Firebase 연결 중</span>
+            </div>
+            <span class="sync-count-badge" id="storage-count">0건</span>
+          </div>
+          <div class="sync-subtext" id="sync-subtext">프로젝트: promptsave-10211</div>
+        </div>
+        <div class="quick-backup">
+          <button class="btn-backup-sm" id="btn-quick-export" title="JSON 백업 다운로드">
+            <i class="fa-solid fa-download"></i> 백업 다운로드
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 메인 컨텐츠 영역 -->
+    <main class="main-content">
+      <!-- 헤더 -->
+      <header class="top-header">
+        <div class="page-title-wrap">
+          <h2 id="current-page-title">콘텐츠 목록</h2>
+          <p id="current-page-desc">저장된 대본과 프롬프트를 테이블 리스트로 조회하고 관리합니다.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" id="btn-header-new">
+            <i class="fa-solid fa-plus"></i>
+            <span>새 콘텐츠 등록</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- 1. 콘텐츠 목록 탭 (리스트 전용) -->
+      <section id="tab-list" class="tab-pane active">
+        <!-- 필터 & 검색 바 -->
+        <div class="control-panel">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="search-input" placeholder="제목, 대본 본문, 프롬프트, 비고 키워드 검색...">
+            <button id="search-clear-btn" class="search-clear hidden" title="검색어 지우기">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <div class="filter-group">
+            <div class="select-wrapper">
+              <select id="filter-channel">
+                <option value="">모든 채널</option>
+              </select>
+            </div>
+            <div class="select-wrapper">
+              <select id="filter-format">
+                <option value="">모든 형식 (전체)</option>
+              </select>
+            </div>
+            <div class="select-wrapper">
+              <select id="filter-category">
+                <option value="">모든 유형 (전체)</option>
+              </select>
+            </div>
+            <div class="select-wrapper">
+              <select id="sort-order">
+                <option value="updated-desc">최근 수정순</option>
+                <option value="created-desc">최신 등록순</option>
+                <option value="created-asc">오래된 순</option>
+                <option value="title-asc">제목 오름차순</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 결과 요약 및 태그 필터 표시 -->
+        <div class="results-meta">
+          <span>검색 결과: <strong id="filter-count">0</strong>개 콘텐츠</span>
+          <button id="btn-reset-filters" class="btn-text hidden">필터 초기화 <i class="fa-solid fa-rotate-left"></i></button>
+        </div>
+
+        <!-- 리스트(테이블) 전용 뷰 컨테이너 -->
+        <div id="content-table-container" class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 30%;">콘텐츠 제목</th>
+                <th style="width: 12%;">채널명</th>
+                <th style="width: 10%;">영상 형식</th>
+                <th style="width: 11%;">콘텐츠 유형</th>
+                <th style="width: 13%;">포함 요소</th>
+                <th style="width: 11%;">수정일자</th>
+                <th style="width: 13%; text-align: center;">관리</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+
+        <!-- 데이터 없음 안내 -->
+        <div id="empty-state" class="empty-state hidden">
+          <div class="empty-icon">
+            <i class="fa-regular fa-folder-open"></i>
+          </div>
+          <h3>등록된 콘텐츠가 없습니다</h3>
+          <p>새로운 대본과 프롬프트를 등록해보세요.</p>
+          <button class="btn btn-secondary mt-3" id="btn-empty-create">첫 콘텐츠 만들기</button>
+        </div>
+      </section>
+
+      <!-- 2. 콘텐츠 작성 및 수정 탭 -->
+      <section id="tab-editor" class="tab-pane">
+        <div class="editor-container">
+          <div class="editor-header-box">
+            <div class="editor-title-wrap">
+              <span class="editor-badge" id="editor-mode-badge">새 콘텐츠 작성</span>
+              <h3 id="editor-form-title">콘텐츠 프롬프트 및 대본 입력</h3>
+            </div>
+            <div class="editor-actions-top">
+              <button type="button" class="btn btn-light" id="btn-cancel-edit">
+                <i class="fa-solid fa-arrow-left"></i> 목록으로 돌아가기
+              </button>
+              <button type="button" class="btn btn-primary" id="btn-save-content">
+                <i class="fa-solid fa-check"></i> 저장하기
+              </button>
+            </div>
+          </div>
+
+          <form id="content-form" class="content-form">
+            <input type="hidden" id="edit-id" value="">
+
+            <!-- 기본 메타 정보 카드 -->
+            <div class="form-card">
+              <h4 class="form-section-title"><i class="fa-solid fa-circle-info"></i> 기본 분류 정보</h4>
+              
+              <div class="form-row">
+                <div class="form-group flex-2">
+                  <label for="form-title" class="required">콘텐츠 제목</label>
+                  <input type="text" id="form-title" placeholder="예: [아라쇼] 신제품 스마트 조명 5종 비교 언박싱" required>
+                </div>
+              </div>
+
+              <div class="form-grid-3">
+                <div class="form-group">
+                  <label for="form-channel" class="required">채널명</label>
+                  <select id="form-channel" required></select>
+                </div>
+                <div class="form-group">
+                  <label for="form-format" class="required">영상 형식</label>
+                  <select id="form-format" required></select>
+                </div>
+                <div class="form-group">
+                  <label for="form-category" class="required">콘텐츠 유형</label>
+                  <select id="form-category" required></select>
+                </div>
+              </div>
+
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label for="form-created-at">생성 일자</label>
+                  <input type="datetime-local" id="form-created-at" readonly class="input-readonly">
+                  <span class="field-help">최초 저장 시 자동으로 등록됩니다.</span>
+                </div>
+                <div class="form-group">
+                  <label for="form-updated-at">최근 수정 일자</label>
+                  <input type="datetime-local" id="form-updated-at" readonly class="input-readonly">
+                  <span class="field-help">수정 시 자동으로 현재 시간으로 갱신됩니다.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 대본 섹션 -->
+            <div class="form-card">
+              <div class="section-header-flex">
+                <h4 class="form-section-title"><i class="fa-solid fa-scroll"></i> 콘텐츠 대본 (Script)</h4>
+                <div class="section-tools">
+                  <span class="char-counter" id="script-counter">0자</span>
+                  <button type="button" class="btn-copy-tool" data-target="form-script">
+                    <i class="fa-regular fa-copy"></i> 대본 복사
+                  </button>
+                </div>
+              </div>
+              <div class="form-group">
+                <textarea id="form-script" rows="9" placeholder="기획 의도, 오프닝, 본론, 클로징, 나레이션 및 자막 스크립트를 작성하세요..."></textarea>
+              </div>
+            </div>
+
+            <!-- 이미지 & 영상 프롬프트 섹션 -->
+            <div class="form-grid-2 form-card-row">
+              <div class="form-card">
+                <div class="section-header-flex">
+                  <h4 class="form-section-title"><i class="fa-solid fa-image"></i> 이미지 프롬프트</h4>
+                  <div class="section-tools">
+                    <button type="button" class="btn-copy-tool" data-target="form-image-prompt">
+                      <i class="fa-regular fa-copy"></i> 복사
+                    </button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <textarea id="form-image-prompt" rows="7" placeholder="미드저니, DALL-E, Stable Diffusion 등에 활용할 썸네일/삽입 이미지 프롬프트를 적어주세요...&#10;예: A modern sleek LED lighting product on a minimalist wooden table, soft cinematic studio light, 8k --ar 16:9"></textarea>
+                </div>
+              </div>
+
+              <div class="form-card">
+                <div class="section-header-flex">
+                  <h4 class="form-section-title"><i class="fa-solid fa-video"></i> 영상 프롬프트</h4>
+                  <div class="section-tools">
+                    <button type="button" class="btn-copy-tool" data-target="form-video-prompt">
+                      <i class="fa-regular fa-copy"></i> 복사
+                    </button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <textarea id="form-video-prompt" rows="7" placeholder="Runway Gen-2/3, Kling, Sora, Luma 등에 입력할 모션/영상 생성 프롬프트나 카메라 샷 지시문...&#10;예: Slow dolly zoom in, cinematic product commercial shot of smart electrical switch turning on, realistic lighting"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- 비고 섹션 -->
+            <div class="form-card">
+              <div class="section-header-flex">
+                <h4 class="form-section-title"><i class="fa-regular fa-clipboard"></i> 비고 (참고사항 및 레퍼런스)</h4>
+                <div class="section-tools">
+                  <button type="button" class="btn-copy-tool" data-target="form-notes">
+                    <i class="fa-regular fa-copy"></i> 복사
+                  </button>
+                </div>
+              </div>
+              <div class="form-group">
+                <textarea id="form-notes" rows="4" placeholder="촬영 일정, 레퍼런스 링크, 제품 모델명, 주의사항 등을 자유롭게 기록하세요..."></textarea>
+              </div>
+            </div>
+
+            <div class="form-bottom-actions">
+              <button type="button" class="btn btn-secondary" id="btn-cancel-bottom">취소 및 목록으로</button>
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fa-solid fa-floppy-disk"></i> 저장하기
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- 3. 대시보드 통계 탭 (컴팩트 & 슬림 디자인) -->
+      <section id="tab-dashboard" class="tab-pane">
+        <div class="kpi-grid kpi-grid-compact">
+          <div class="kpi-card">
+            <div class="kpi-icon bg-blue">
+              <i class="fa-solid fa-folder-closed"></i>
+            </div>
+            <div class="kpi-content">
+              <span class="kpi-title">총 콘텐츠</span>
+              <h3 class="kpi-value" id="kpi-total-count">0</h3>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon bg-indigo">
+              <i class="fa-solid fa-tv"></i>
+            </div>
+            <div class="kpi-content">
+              <span class="kpi-title">롱폼 콘텐츠</span>
+              <h3 class="kpi-value" id="kpi-long-count">0</h3>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon bg-rose">
+              <i class="fa-solid fa-mobile-screen"></i>
+            </div>
+            <div class="kpi-content">
+              <span class="kpi-title">쇼츠 콘텐츠</span>
+              <h3 class="kpi-value" id="kpi-shorts-count">0</h3>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon bg-emerald">
+              <i class="fa-solid fa-bullhorn"></i>
+            </div>
+            <div class="kpi-content">
+              <span class="kpi-title">광고 콘텐츠</span>
+              <h3 class="kpi-value" id="kpi-ad-count">0</h3>
+            </div>
+          </div>
+        </div>
+
+        <div class="charts-grid charts-grid-compact">
+          <div class="chart-card">
+            <div class="chart-header">
+              <h4><i class="fa-solid fa-chart-pie"></i> 채널별 콘텐츠</h4>
+              <span class="chart-subtitle">비츠온TV, 아라쇼, 일신비츠온</span>
+            </div>
+            <div class="chart-body">
+              <canvas id="chart-channel"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-header">
+              <h4><i class="fa-solid fa-chart-column"></i> 영상 형식</h4>
+              <span class="chart-subtitle">롱폼 vs 숏폼</span>
+            </div>
+            <div class="chart-body">
+              <canvas id="chart-format"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-header">
+              <h4><i class="fa-solid fa-tags"></i> 콘텐츠 유형</h4>
+              <span class="chart-subtitle">비츠온 콘텐츠 vs 광고</span>
+            </div>
+            <div class="chart-body">
+              <canvas id="chart-category"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-header">
+              <h4><i class="fa-solid fa-chart-line"></i> 월별 생성 추이</h4>
+              <span class="chart-subtitle">최근 6개월 등록 현황</span>
+            </div>
+            <div class="chart-body">
+              <canvas id="chart-trend"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. 백엔드/분류 항목 설정 탭 -->
+      <section id="tab-settings" class="tab-pane">
+        <div class="settings-container">
+          <div class="settings-intro">
+            <h3><i class="fa-solid fa-sliders"></i> 메타데이터 & 카테고리 항목 설정</h3>
+            <p>콘텐츠 등록 시 선택할 채널명, 영상 형식, 콘텐츠 유형을 자유롭게 추가하거나 수정할 수 있습니다.</p>
+          </div>
+
+          <div class="settings-grid">
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div class="setting-title-wrap">
+                  <i class="fa-solid fa-tower-broadcast icon-channel"></i>
+                  <h4>채널명 설정</h4>
+                </div>
+                <span class="badge" id="badge-channel-count">3개</span>
+              </div>
+              <p class="settings-card-desc">운영 중인 유튜브, SNS 등의 채널 목록을 관리합니다.</p>
+              
+              <div class="item-input-wrap">
+                <input type="text" id="new-channel-input" placeholder="새 채널명 입력 (예: 비츠온라이브)">
+                <button class="btn btn-sm btn-primary" id="btn-add-channel">추가</button>
+              </div>
+
+              <ul class="settings-item-list" id="channel-item-list"></ul>
+            </div>
+
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div class="setting-title-wrap">
+                  <i class="fa-solid fa-video icon-format"></i>
+                  <h4>영상 형식 설정</h4>
+                </div>
+                <span class="badge" id="badge-format-count">2개</span>
+              </div>
+              <p class="settings-card-desc">롱폼, 쇼츠 외 추가 영상 포맷(릴스, 틱톡 등)을 관리합니다.</p>
+              
+              <div class="item-input-wrap">
+                <input type="text" id="new-format-input" placeholder="새 형식 입력 (예: 릴스/인스타)">
+                <button class="btn btn-sm btn-primary" id="btn-add-format">추가</button>
+              </div>
+
+              <ul class="settings-item-list" id="format-item-list"></ul>
+            </div>
+
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div class="setting-title-wrap">
+                  <i class="fa-solid fa-tag icon-category"></i>
+                  <h4>콘텐츠 유형 설정</h4>
+                </div>
+                <span class="badge" id="badge-category-count">2개</span>
+              </div>
+              <p class="settings-card-desc">비츠온 자체 콘텐츠, 유료 광고, 브랜디드 등 유형을 관리합니다.</p>
+              
+              <div class="item-input-wrap">
+                <input type="text" id="new-category-input" placeholder="새 유형 입력 (예: 제품 매뉴얼)">
+                <button class="btn btn-sm btn-primary" id="btn-add-category">추가</button>
+              </div>
+
+              <ul class="settings-item-list" id="category-item-list"></ul>
+            </div>
+          </div>
+
+          <!-- Firebase 클라우드 연동 상태 및 관리 카드 -->
+          <div class="settings-card firebase-card">
+            <div class="settings-card-header">
+              <div class="setting-title-wrap">
+                <i class="fa-solid fa-cloud icon-cloud"></i>
+                <h4>Firebase 클라우드 연동 (Firestore Database)</h4>
+              </div>
+              <span class="badge badge-firebase" id="firebase-badge-status">연결 확인 중</span>
+            </div>
+            <p class="settings-card-desc">
+              모든 대본, 이미지/영상 프롬프트, 비고 및 분류 설정이 <strong>Firebase Firestore 클라우드</strong>에 실시간으로 안전하게 저장됩니다. 다른 PC나 브라우저에서도 데이터가 자동으로 동기화됩니다.
+            </p>
+
+            <div class="firebase-info-grid">
+              <div class="fb-info-item">
+                <span class="fb-info-label">Firebase 프로젝트</span>
+                <span class="fb-info-val"><code>promptsave-10211</code></span>
+              </div>
+              <div class="fb-info-item">
+                <span class="fb-info-label">실시간 연동 상태</span>
+                <span class="fb-info-val" id="settings-sync-status">연결 확인 중...</span>
+              </div>
+            </div>
+
+            <div class="firebase-actions">
+              <button class="btn btn-primary btn-sm" id="btn-sync-to-cloud">
+                <i class="fa-solid fa-cloud-arrow-up"></i> 현재 로컬 데이터를 클라우드로 모두 동기화
+              </button>
+              <button class="btn btn-outline btn-sm" id="btn-reload-cloud">
+                <i class="fa-solid fa-rotate"></i> 클라우드 데이터 강제 새로고침
+              </button>
+              <button class="btn btn-light btn-sm" id="btn-show-rules-info">
+                <i class="fa-solid fa-shield-halved"></i> 보안 규칙(Rules) 가이드
+              </button>
+            </div>
+          </div>
+
+          <div class="settings-card backup-card">
+            <div class="settings-card-header">
+              <div class="setting-title-wrap">
+                <i class="fa-solid fa-database icon-db"></i>
+                <h4>오프라인 JSON 백업 및 복원</h4>
+              </div>
+            </div>
+            <p class="settings-card-desc">
+              클라우드 저장 외에도 별도의 오프라인 보관이 필요한 경우, 전체 데이터를 JSON 파일로 다운로드하거나 복원할 수 있습니다.
+            </p>
+
+            <div class="backup-actions">
+              <button class="btn btn-outline" id="btn-export-json">
+                <i class="fa-solid fa-file-export"></i> 전체 데이터 JSON 내보내기
+              </button>
+
+              <label class="btn btn-outline btn-file-label">
+                <i class="fa-solid fa-file-import"></i> JSON 데이터 불러오기
+                <input type="file" id="file-import-json" accept=".json" style="display: none;">
+              </label>
+
+              <button class="btn btn-outline-danger" id="btn-load-sample">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> 기본 샘플 데이터 채우기
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 콘텐츠 상세 보기 모달 -->
+  <div id="detail-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-meta-tags" id="modal-tags"></div>
+        <button class="modal-close" id="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <h2 class="modal-title" id="modal-title">콘텐츠 제목</h2>
+        <div class="modal-dates" id="modal-dates">
+          <span><i class="fa-regular fa-calendar-plus"></i> 생성: <span id="modal-created"></span></span>
+          <span><i class="fa-regular fa-clock"></i> 수정: <span id="modal-updated"></span></span>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-label-bar">
+            <span><i class="fa-solid fa-scroll"></i> 대본 (Script)</span>
+            <button class="btn-copy-tool" id="btn-modal-copy-script"><i class="fa-regular fa-copy"></i> 복사</button>
+          </div>
+          <div class="detail-content-box" id="modal-script"></div>
+        </div>
+
+        <div class="detail-grid-2">
+          <div class="detail-section">
+            <div class="detail-label-bar">
+              <span><i class="fa-solid fa-image"></i> 이미지 프롬프트</span>
+              <button class="btn-copy-tool" id="btn-modal-copy-image"><i class="fa-regular fa-copy"></i> 복사</button>
+            </div>
+            <div class="detail-content-box code-style" id="modal-image-prompt"></div>
+          </div>
+
+          <div class="detail-section">
+            <div class="detail-label-bar">
+              <span><i class="fa-solid fa-video"></i> 영상 프롬프트</span>
+              <button class="btn-copy-tool" id="btn-modal-copy-video"><i class="fa-regular fa-copy"></i> 복사</button>
+            </div>
+            <div class="detail-content-box code-style" id="modal-video-prompt"></div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-label-bar">
+            <span><i class="fa-regular fa-clipboard"></i> 비고 (메모 & 레퍼런스)</span>
+            <button class="btn-copy-tool" id="btn-modal-copy-notes"><i class="fa-regular fa-copy"></i> 복사</button>
+          </div>
+          <div class="detail-content-box" id="modal-notes"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <div class="modal-footer-left">
+          <button class="btn btn-outline-danger" id="btn-modal-delete">
+            <i class="fa-regular fa-trash-can"></i> 삭제
+          </button>
+          <button class="btn btn-outline" id="btn-modal-export-md" title="이 콘텐츠를 마크다운(.md) 파일로 저장">
+            <i class="fa-regular fa-file-lines"></i> MD 파일 내보내기
+          </button>
+        </div>
+        <div class="modal-footer-right">
+          <button class="btn btn-secondary" id="btn-modal-close-bottom">닫기</button>
+          <button class="btn btn-primary" id="btn-modal-edit">
+            <i class="fa-solid fa-pen-to-square"></i> 수정하기
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 삭제 확인 전용 경고 모달 팝업 -->
+  <div id="delete-confirm-modal" class="modal-overlay hidden">
+    <div class="modal-card modal-card-sm delete-confirm-card">
+      <div class="delete-icon-wrap">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <h3 class="delete-modal-title">정말 삭제하시겠습니까?</h3>
+      <p class="delete-modal-desc">
+        삭제된 콘텐츠와 작성된 대본 및 프롬프트는 복구할 수 없습니다.<br>
+        계속 진행하시겠습니까?
+      </p>
+      <div class="delete-target-preview" id="delete-target-title">콘텐츠 제목</div>
+      <div class="delete-modal-actions">
+        <button class="btn btn-secondary" id="btn-cancel-delete">취소</button>
+        <button class="btn btn-danger-solid" id="btn-confirm-delete">
+          <i class="fa-regular fa-trash-can"></i> 완전히 삭제
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 필수 참고 프롬프트 전용 모달 팝업 -->
+  <div id="ref-prompt-modal" class="modal-overlay hidden">
+    <div class="modal-card modal-card-xl">
+      <div class="modal-header ref-modal-header">
+        <div class="ref-header-info">
+          <div class="ref-header-badge"><i class="fa-solid fa-wand-magic-sparkles"></i> REFERENCE PROMPTS</div>
+          <h2 class="ref-header-title">참고 프롬프트 모음</h2>
+        </div>
+        <button class="modal-close" id="btn-close-ref-modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="ref-modal-layout">
+        <aside class="ref-prompt-sidebar">
+          <div class="ref-sidebar-heading">프롬프트 목록 (6종)</div>
+          <div class="ref-tab-list" id="ref-tab-list"></div>
+        </aside>
+
+        <section class="ref-prompt-content-pane">
+          <div class="ref-pane-topbar">
+            <div class="ref-current-meta">
+              <h3 id="ref-current-title">01 주제 프롬프트(비츠온TV용)</h3>
+              <span id="ref-current-stats" class="ref-stats-badge">0자 · 0줄</span>
+            </div>
+            <button class="btn btn-primary btn-copy-hero" id="btn-copy-active-ref">
+              <i class="fa-regular fa-copy"></i>
+              <span>프롬프트 복사</span>
+            </button>
+          </div>
+
+          <div class="ref-code-viewer-wrap">
+            <pre class="ref-code-viewer" id="ref-code-content"></pre>
+          </div>
+        </section>
+      </div>
+
+      <div class="modal-footer">
+        <span class="ref-footer-hint"><i class="fa-solid fa-circle-info"></i> 클릭 한 번으로 복사하여 생성형 AI(ChatGPT, Claude 등)에 바로 붙여넣기 하실 수 있습니다.</span>
+        <button class="btn btn-secondary" id="btn-close-ref-bottom">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase 보안 규칙 안내 모달 -->
+  <div id="firebase-rules-modal" class="modal-overlay hidden">
+    <div class="modal-card modal-card-md">
+      <div class="modal-header">
+        <div class="rules-modal-header-wrap">
+          <i class="fa-solid fa-shield-halved" style="color: #2563eb; font-size: 1.25rem;"></i>
+          <h3>Firebase Firestore 보안 규칙 설정 안내</h3>
+        </div>
+        <button class="modal-close" id="btn-close-rules-modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.88rem; color: #475569; line-height: 1.6; margin-bottom: 12px;">
+          데이터가 원활하게 저장 및 실시간 동기화되려면 <strong>Firebase 콘솔</strong>에서 Firestore 보안 규칙(Rules)을 활성화해야 합니다.
+        </p>
+        <ol style="font-size: 0.84rem; color: #334155; line-height: 1.7; padding-left: 20px; margin-bottom: 16px;">
+          <li><a href="https://console.firebase.google.com/project/promptsave-10211/firestore/rules" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-weight: 600; text-decoration: underline;">Firebase 콘솔 Firestore 규칙 페이지</a>로 이동합니다.</li>
+          <li>데이터베이스가 아직 없다면 <strong>[데이터베이스 만들기]</strong>를 클릭하고 기본 위치(예: asia-northeast3 서울)를 선택합니다.</li>
+          <li><strong>[규칙(Rules)]</strong> 탭에 아래 코드를 복사하여 붙여넣고 <strong>[게시(Publish)]</strong>를 누릅니다.</li>
+        </ol>
+        <div style="background: #1e293b; color: #f8fafc; padding: 14px 16px; border-radius: 8px; font-family: monospace; font-size: 0.82rem; line-height: 1.5; position: relative;">
+          <pre style="margin: 0; overflow-x: auto;"><code>rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}</code></pre>
+          <button class="btn btn-sm btn-primary" id="btn-copy-rules-code" style="position: absolute; top: 10px; right: 10px; font-size: 0.72rem; padding: 4px 8px;">
+            <i class="fa-regular fa-copy"></i> 복사
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: flex-end;">
+        <button class="btn btn-secondary" id="btn-close-rules-bottom">확인 및 닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 토스트 알림 컴포넌트 -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Firebase App & Firestore Compat SDKs (로컬 file:// 및 GitHub Pages 완벽 호환) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

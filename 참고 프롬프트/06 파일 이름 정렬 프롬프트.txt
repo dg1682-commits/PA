@@ -1,0 +1,1 @@
+﻿Rename the files by adding sequential numbers such as 01, 02, 03, and so on at the beginning of each filename, following the exact order of the script you have worked on so far. Keep the file order consistent with the script sequence.
